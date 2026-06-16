@@ -1,6 +1,10 @@
-import { useGetProxies, useAddProxy, useDeleteProxy, useCheckCurrentIp, useToggleProxyMode, getGetProxiesQueryKey } from "@workspace/api-client-react";
+import {
+  useGetProxies, useAddProxy, useDeleteProxy,
+  useCheckCurrentIp, useToggleProxyMode,
+  getGetProxiesQueryKey, getCheckCurrentIpQueryKey,
+} from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
-import { Globe, Plus, Trash2, MapPin, Activity, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Globe, Plus, Trash2, MapPin, Activity, ShieldCheck, ShieldAlert, Wifi } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,11 +15,22 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ProxyInputProtocol } from "@workspace/api-client-react";
+
+type Protocol = "http" | "https" | "socks5";
+
+const STATUS_COLORS: Record<string, string> = {
+  active:   "border-primary text-primary bg-primary/10",
+  inactive: "border-destructive/50 text-destructive/70 bg-destructive/5",
+  testing:  "border-yellow-500/50 text-yellow-400 bg-yellow-500/5",
+};
 
 export default function Proxies() {
-  const { data: proxies, isLoading } = useGetProxies();
-  const { data: ipInfo, refetch: checkIp, isFetching: checkingIp } = useCheckCurrentIp();
+  const { data: proxies, isLoading } = useGetProxies({
+    query: { queryKey: getGetProxiesQueryKey(), refetchInterval: 30_000 }
+  });
+  const { data: ipInfo, refetch: checkIp, isFetching: checkingIp } = useCheckCurrentIp({
+    query: { queryKey: getCheckCurrentIpQueryKey(), enabled: false }
+  });
   const addMut = useAddProxy();
   const deleteMut = useDeleteProxy();
   const toggleMut = useToggleProxyMode();
@@ -25,83 +40,108 @@ export default function Proxies() {
 
   const [ip, setIp] = useState("");
   const [port, setPort] = useState("");
-  const [protocol, setProtocol] = useState<ProxyInputProtocol>("http");
+  const [protocol, setProtocol] = useState<Protocol>("http");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [proxyEnabled, setProxyEnabled] = useState(false);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getGetProxiesQueryKey() });
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ip || !port) return;
-    
+    if (!ip.trim() || !port) return;
     addMut.mutate(
-      { data: { ip, port: parseInt(port), protocol } },
+      { data: { ip: ip.trim(), port: parseInt(port), protocol, username: username || undefined, password: password || undefined } },
       {
         onSuccess: () => {
           invalidate();
           setIsDialogOpen(false);
-          setIp("");
-          setPort("");
-          toast({ title: "Proxy Added", description: `Added ${ip}:${port}` });
+          setIp(""); setPort(""); setUsername(""); setPassword("");
+          toast({ title: "NODE INJECTED", description: `${ip}:${port} added to mesh.` });
+        },
+        onError: () => {
+          toast({ title: "INJECTION FAILED", variant: "destructive" });
         }
       }
     );
   };
 
   const handleToggle = (checked: boolean) => {
-    toggleMut.mutate({ data: { enabled: checked } }, {
-      onSuccess: () => {
-        checkIp();
-        toast({ title: "Proxy Network", description: checked ? "ENGAGED" : "DISABLED" });
+    setProxyEnabled(checked);
+    toggleMut.mutate(
+      { data: { enabled: checked } },
+      {
+        onSuccess: () => {
+          checkIp();
+          toast({ title: "PROXY NETWORK", description: checked ? "ROUTING ENGAGED" : "ROUTING DISABLED" });
+        }
       }
-    });
+    );
   };
+
+  const activeCount = proxies?.filter(p => p.status === "active").length ?? 0;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center border-b border-primary/20 pb-4">
-        <h1 className="text-3xl font-bold text-primary tracking-widest glow-text uppercase flex items-center gap-3">
-          <Globe className="w-8 h-8" />
-          {t('nav.proxies')} // MESH
-        </h1>
-        
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 border border-primary/30 p-2 rounded-none bg-black">
-            <span className="text-xs uppercase tracking-widest text-primary/70">PROXY NETWORK</span>
-            <Switch 
-              checked={ipInfo?.proxyEnabled || false} 
+      <div className="flex flex-wrap justify-between items-center gap-4 border-b border-primary/20 pb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-primary tracking-widest glow-text uppercase flex items-center gap-3">
+            <Globe className="w-6 h-6" />
+            {t('proxies.title')}
+          </h1>
+          <p className="text-primary/40 text-xs font-mono mt-1">
+            {activeCount} ACTIVE NODES ● {proxies?.length ?? 0} TOTAL
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Proxy Toggle */}
+          <div className="flex items-center gap-2 border border-primary/30 px-3 py-2 bg-black">
+            <span className="text-xs uppercase tracking-widest text-primary/60 font-mono">{t('proxies.toggle')}</span>
+            <Switch
+              checked={proxyEnabled}
               onCheckedChange={handleToggle}
               className="data-[state=checked]:bg-primary"
+              data-testid="switch-proxy-toggle"
             />
+            <span className={`text-xs font-mono uppercase ${proxyEnabled ? "text-primary glow-text" : "text-primary/30"}`}>
+              {proxyEnabled ? "ON" : "OFF"}
+            </span>
           </div>
+
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary text-black hover:bg-primary/90 glow-box">
-                <Plus className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+              <Button className="bg-primary text-black hover:bg-primary/90 glow-box rounded-none uppercase tracking-wider text-xs font-bold h-10">
+                <Plus className="w-4 h-4 mr-2" />
                 {t('action.add_proxy')}
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-primary/30 text-primary crt max-w-sm">
+            <DialogContent className="bg-black border-primary/40 text-primary max-w-sm rounded-none">
               <DialogHeader>
-                <DialogTitle className="text-xl font-bold tracking-widest glow-text">ADD PROXY NODE</DialogTitle>
+                <DialogTitle className="text-xl font-bold tracking-widest glow-text uppercase">
+                  {t('proxies.add_title')}
+                </DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleAdd} className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <label className="text-xs uppercase tracking-wider text-primary/70">IP Address</label>
-                  <Input value={ip} onChange={(e) => setIp(e.target.value)} placeholder="192.168.1.1" className="bg-black border-primary/30 text-primary h-12" />
+              <form onSubmit={handleAdd} className="space-y-4 mt-2">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] uppercase tracking-wider text-primary/50 font-mono">{t('proxies.ip_label')}</label>
+                  <Input value={ip} onChange={e => setIp(e.target.value)} placeholder="192.168.1.100"
+                    className="bg-black border-primary/30 text-primary h-11 rounded-none font-mono" />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-wider text-primary/70">Port</label>
-                    <Input value={port} onChange={(e) => setPort(e.target.value)} placeholder="8080" type="number" className="bg-black border-primary/30 text-primary h-12" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] uppercase tracking-wider text-primary/50 font-mono">{t('proxies.port_label')}</label>
+                    <Input value={port} onChange={e => setPort(e.target.value)} placeholder="8080" type="number"
+                      className="bg-black border-primary/30 text-primary h-11 rounded-none font-mono" />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs uppercase tracking-wider text-primary/70">Protocol</label>
-                    <Select value={protocol} onValueChange={(v) => setProtocol(v as ProxyInputProtocol)}>
-                      <SelectTrigger className="bg-black border-primary/30 text-primary h-12 rounded-none">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] uppercase tracking-wider text-primary/50 font-mono">{t('proxies.proto_label')}</label>
+                    <Select value={protocol} onValueChange={v => setProtocol(v as Protocol)}>
+                      <SelectTrigger className="bg-black border-primary/30 text-primary h-11 rounded-none font-mono">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-card border-primary/30 text-primary rounded-none">
+                      <SelectContent className="bg-black border-primary/30 text-primary rounded-none">
                         <SelectItem value="http">HTTP</SelectItem>
                         <SelectItem value="https">HTTPS</SelectItem>
                         <SelectItem value="socks5">SOCKS5</SelectItem>
@@ -109,8 +149,21 @@ export default function Proxies() {
                     </Select>
                   </div>
                 </div>
-                <Button type="submit" disabled={addMut.isPending} className="w-full bg-primary text-black mt-4 glow-box font-bold tracking-widest">
-                  {addMut.isPending ? "INJECTING..." : "ADD NODE"}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] uppercase tracking-wider text-primary/50 font-mono">USER (optional)</label>
+                    <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="username"
+                      className="bg-black border-primary/30 text-primary h-11 rounded-none font-mono" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] uppercase tracking-wider text-primary/50 font-mono">PASS (optional)</label>
+                    <Input value={password} onChange={e => setPassword(e.target.value)} placeholder="password" type="password"
+                      className="bg-black border-primary/30 text-primary h-11 rounded-none font-mono" />
+                  </div>
+                </div>
+                <Button type="submit" disabled={addMut.isPending || !ip.trim() || !port}
+                  className="w-full bg-primary text-black rounded-none glow-box uppercase tracking-widest font-bold h-11">
+                  {addMut.isPending ? t('proxies.adding') : t('proxies.add_btn')}
                 </Button>
               </form>
             </DialogContent>
@@ -118,81 +171,136 @@ export default function Proxies() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="col-span-1 md:col-span-3 bg-black border border-primary/30 p-6 glow-box flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Button onClick={() => checkIp()} disabled={checkingIp} variant="outline" className="border-primary text-primary hover:bg-primary/20 h-16 w-32 flex-col gap-1 glow-box">
-              <Activity className={`w-5 h-5 ${checkingIp ? 'animate-spin' : ''}`} />
-              <span className="text-[10px] tracking-widest">TRACE IP</span>
-            </Button>
-            
-            {ipInfo ? (
-              <div className="space-y-1">
-                <div className="text-sm text-primary/50 uppercase tracking-widest">Current Outbound Vector</div>
-                <div className="text-2xl font-bold text-primary glow-text flex items-center gap-3">
-                  {ipInfo.ip}
-                  {ipInfo.proxyEnabled ? (
-                    <Badge className="bg-primary text-black text-xs px-2 py-0 h-5">HIDDEN</Badge>
-                  ) : (
-                    <Badge variant="destructive" className="text-xs px-2 py-0 h-5 glow-box-red">EXPOSED</Badge>
-                  )}
-                </div>
-                <div className="text-xs text-primary/70 flex items-center gap-2 uppercase tracking-wider">
-                  <MapPin className="w-3 h-3" />
-                  {ipInfo.country} - {ipInfo.isp}
-                </div>
-              </div>
-            ) : (
-              <div className="text-primary/50 animate-pulse">Awaiting trace...</div>
-            )}
-          </div>
-        </div>
+      {/* IP Trace Panel */}
+      <div className="bg-black border border-primary/30 glow-box p-5 flex flex-wrap items-center gap-6">
+        <Button
+          onClick={() => checkIp()}
+          disabled={checkingIp}
+          variant="outline"
+          className="border-primary/50 text-primary hover:bg-primary/10 h-16 w-36 flex-col gap-1 glow-box rounded-none"
+          data-testid="button-trace-ip"
+        >
+          <Wifi className={`w-5 h-5 ${checkingIp ? "animate-pulse" : ""}`} />
+          <span className="text-[10px] tracking-widest uppercase">{t('proxies.trace')}</span>
+        </Button>
 
-        <div className="col-span-1 md:col-span-3 border border-primary/20 bg-card glow-box">
-          <Table>
-            <TableHeader className="bg-primary/5 border-b border-primary/20">
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="text-primary">NODE</TableHead>
-                <TableHead className="text-primary">PROTOCOL</TableHead>
-                <TableHead className="text-primary">GEO</TableHead>
-                <TableHead className="text-primary">LATENCY</TableHead>
-                <TableHead className="text-primary">STATUS</TableHead>
-                <TableHead className="text-primary text-right">ACTIONS</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow><TableCell colSpan={6} className="text-center text-primary/50 py-8">Scanning mesh...</TableCell></TableRow>
-              ) : proxies?.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center text-primary/50 py-8">NO NODES AVAILABLE</TableCell></TableRow>
+        {ipInfo ? (
+          <div className="flex-1 space-y-2">
+            <div className="text-xs text-primary/40 uppercase tracking-widest font-mono">{t('proxies.outbound')}</div>
+            <div className="text-2xl font-bold text-primary glow-text font-mono flex items-center gap-3 flex-wrap">
+              {ipInfo.ip}
+              {ipInfo.proxyEnabled ? (
+                <Badge className="bg-primary/15 text-primary border border-primary glow-box rounded-none text-xs uppercase">
+                  <ShieldCheck className="w-3 h-3 mr-1" />
+                  {t('proxies.hidden')}
+                </Badge>
               ) : (
-                proxies?.map(proxy => (
-                  <TableRow key={proxy.id} className="border-b border-primary/10 hover:bg-primary/5">
-                    <TableCell className="font-mono font-medium text-primary glow-text">{proxy.ip}:{proxy.port}</TableCell>
-                    <TableCell className="uppercase text-primary/70">{proxy.protocol}</TableCell>
-                    <TableCell className="text-primary/70">{proxy.country || "UNKNOWN"}</TableCell>
-                    <TableCell className="font-mono text-primary/70">{proxy.latency ? `${proxy.latency}ms` : "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`
-                        ${proxy.status === 'active' ? 'border-primary text-primary glow-box' : ''}
-                        ${proxy.status === 'inactive' ? 'border-destructive text-destructive' : ''}
-                        ${proxy.status === 'testing' ? 'border-yellow-500 text-yellow-500' : ''}
-                        uppercase
-                      `}>
-                        {proxy.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" className="text-primary hover:text-destructive hover:bg-destructive/20" onClick={() => deleteMut.mutate({ id: proxy.id }, { onSuccess: invalidate })}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                <Badge variant="outline" className="border-destructive/50 text-destructive bg-destructive/10 rounded-none text-xs uppercase glow-box-red">
+                  <ShieldAlert className="w-3 h-3 mr-1" />
+                  {t('proxies.exposed')}
+                </Badge>
               )}
-            </TableBody>
-          </Table>
-        </div>
+            </div>
+            <div className="text-xs text-primary/50 flex items-center gap-2 uppercase tracking-wider font-mono flex-wrap">
+              <MapPin className="w-3 h-3" />
+              <span>{ipInfo.country}</span>
+              {ipInfo.city && <span>/ {ipInfo.city}</span>}
+              <span className="text-primary/30">●</span>
+              <span>{ipInfo.isp}</span>
+              {ipInfo.lat && ipInfo.lon && (
+                <span className="text-primary/30">({ipInfo.lat.toFixed(2)}, {ipInfo.lon.toFixed(2)})</span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="text-primary/30 font-mono text-sm animate-pulse">
+            AWAITING TRACE VECTOR...
+          </div>
+        )}
+      </div>
+
+      {/* Proxy Table */}
+      <div className="border border-primary/20 glow-box bg-card">
+        <Table>
+          <TableHeader className="bg-primary/5 border-b border-primary/20">
+            <TableRow className="hover:bg-transparent border-none">
+              <TableHead className="text-primary/60 text-xs uppercase tracking-widest font-mono">{t('proxies.node')}</TableHead>
+              <TableHead className="text-primary/60 text-xs uppercase tracking-widest font-mono">{t('proxies.protocol')}</TableHead>
+              <TableHead className="text-primary/60 text-xs uppercase tracking-widest font-mono">{t('proxies.geo')}</TableHead>
+              <TableHead className="text-primary/60 text-xs uppercase tracking-widest font-mono">{t('proxies.latency')}</TableHead>
+              <TableHead className="text-primary/60 text-xs uppercase tracking-widest font-mono">HEALTH</TableHead>
+              <TableHead className="text-primary/60 text-xs uppercase tracking-widest font-mono">{t('proxies.status')}</TableHead>
+              <TableHead className="text-primary/60 text-xs uppercase tracking-widest font-mono text-right">{t('proxies.actions')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-primary/40 py-12 font-mono animate-pulse">
+                  SCANNING MESH...
+                </TableCell>
+              </TableRow>
+            ) : !proxies?.length ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-primary/30 py-12 font-mono">
+                  {t('proxies.empty')}
+                </TableCell>
+              </TableRow>
+            ) : proxies.map(proxy => (
+              <TableRow
+                key={proxy.id}
+                className="border-b border-primary/10 hover:bg-primary/5"
+                data-testid={`row-proxy-${proxy.id}`}
+              >
+                <TableCell className="font-mono font-medium text-primary glow-text text-sm">
+                  {proxy.ip}<span className="text-primary/40">:{proxy.port}</span>
+                </TableCell>
+                <TableCell className="uppercase text-primary/60 font-mono text-xs">
+                  {proxy.protocol}
+                </TableCell>
+                <TableCell className="text-primary/60 font-mono text-xs">
+                  {proxy.country || "UNKNOWN"}
+                  {proxy.isp && <div className="text-primary/30 text-[10px]">{proxy.isp}</div>}
+                </TableCell>
+                <TableCell className="font-mono text-sm">
+                  <span className={proxy.latency && proxy.latency < 100 ? "text-primary" : "text-yellow-400"}>
+                    {proxy.latency ? `${proxy.latency}ms` : "—"}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-1 w-16 bg-black border border-primary/20">
+                      <div
+                        className="h-full bg-primary"
+                        style={{ width: `${proxy.healthScore ?? 0}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-mono text-primary/50">{proxy.healthScore ?? 0}%</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={`uppercase text-[10px] font-mono rounded-none border ${STATUS_COLORS[proxy.status] || "border-primary/20 text-primary/40"}`}
+                  >
+                    {proxy.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 text-primary/30 hover:text-destructive hover:bg-destructive/10 rounded-none"
+                    onClick={() => deleteMut.mutate({ id: proxy.id }, { onSuccess: invalidate })}
+                    data-testid={`button-delete-proxy-${proxy.id}`}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

@@ -1,0 +1,101 @@
+Act as an expert Full-Stack Software Engineer and Senior Cybersecurity Architect. Your task is to build and generate the complete code and architecture for a Next-Generation Automated Vulnerability Management & Security Posture Platform. This platform must be fully optimized for deployment on Replit using Python (FastAPI or Django) for the Backend, and a futuristic, highly fluid, interactive Cyberpunk/Hacker-themed UI (Phosphor Green-on-Black) for the Frontend using HTML, CSS, Tailwind CSS, and HTMX/Alpine.js to ensure extreme fluidness with zero full-page browser refreshes.
+
+The platform must support complete Bilingual capabilities (Arabic and English) with a seamless toggle switch that flips the layout structure (LTR/RTL) without breaking the responsive grid or terminal-style design.
+
+---
+
+### 0. THE CYBERPUNK BOOT LOADER & USER EXPERIENCE (UX)
+- Before displaying any system dashboard, the application must execute an immersive, animated Hacker-Themed Loader Screen (Splash Screen).
+- The loader must feature a simulated system initialization: scrolling kernel log files, cryptographic key verifications, and memory allocation counters blinking rapidly in green text on a pitch-black background, culminating in a smooth, cinematic fade-out that reveals the portal.
+- UX Requirement: Every micro-interaction, button hover, panel transition, and data table update must feel fluid, tactile, and responsive ("smoothie"). Utilise custom CSS keyframes, Alpine.js states, and HTMX swaps to feed data lines into dashboards instantly as they happen in the background.
+
+---
+
+### 1. DYNAMIC TOOL LIFECYCLE & GITHUB INTEGRATION PIPELINE
+The platform must feature a fully automated, active mechanism to manage, view, and dynamically install security tools via raw repository URLs:
+- Active Tools Inventory Panel: A dedicated section in the admin interface displaying all currently installed, active, and running tools with real-time health checks, current versions, and execution status.
+- Dynamic Tool Insertion: Provide an input module where an administrator can paste a raw GitHub Repository URL of a new tool. The backend must automatically:
+  1. Clone or download the repository into an isolated runtime directory.
+  2. Parse the repository to detect dependencies (e.g., executing `pip install -r requirements.txt`, setting up binaries, or preparing configuration manifests).
+  3. Execute an automated internal stability self-test against a local sandbox loopback.
+  4. Dynamically inject the new tool into the UI checklist, database registry, and orchestration worker pipeline, making it immediately available for real scanning without restarting the web server.
+
+---
+
+### 2. SYSTEM ARCHITECTURE & BACKEND ORCHESTRATION
+- Asynchronous Task Worker Queue: Build an asynchronous architecture (such as Python’s Asyncio Background Tasks or Celery with Redis adapted for Replit) to manage multi-tool scan sequences sequentially without blocking the web framework or causing HTTP timeouts.
+- Tool Maintenance Subsystem: Implement a scheduled maintenance routine that continuously verifies existing tool integrity and checks specified GitHub repositories for updates via the GitHub API, handling updates utilizing a Blue-Green deployment swap style.
+
+---
+
+### 3. CORE ASSESSMENT MODULES & WORDLIST FUZZING WORKFLOW
+The platform must orchestrate its installed suite sequentially or selectively based on explicit targets to perform comprehensive posture mappings:
+1. Subdomain Enumeration: Execute 'Subfinder' or equivalent mapping binaries to extract assets.
+2. Port & Service Discovery: Execute 'Naabu' or 'Nmap' service signatures against active hosts.
+3. Directory Brute Forcing / Fuzzing: Execute 'ffuf' or an optimized custom internal fuzzing script using an aggressive, highly optimized dictionary compiled to catch configuration leaks, backups, and administrative routes:
+   - Configuration & Env: `/.env`, `/.env.bak`, `/.env.local`, `/config.php`, `/config.json`, `/web.config`, `/.git/HEAD`
+   - Backups & Logs: `/backup.zip`, `/site.zip`, `/www.zip`, `/db.sql`, `/backup.sql`, `/database.sqlite`, `/error.log`, `/debug.log`, `/access.log`
+   - Admin Frameworks: `/admin.txt`, `/auth.txt`, `/pass.txt`, `/robots.txt`, `/wp-admin/`, `/backend/`, `/manage/`
+4. Vulnerability Assessment: Execute 'Nuclei' with targeted YAML templates to check for real-time misconfigurations.
+5. Code Analysis & Supply Chain: Support static analysis tools ('Semgrep'/'Bandit') for uploaded source files (Python, Flutter/Dart, JS) and 'Trivy' for tracking vulnerable third-party library dependencies.
+6. Domain Integrity: Support 'Subzy' or 'SubOver' to detect subdomain takeover vectors.
+
+---
+
+### 4. ANTI-BAN ROTATING PROXY SYSTEM & LIVE "WHERE IS MY IP" ENGINE
+- Proxy Control Pool: A background daemon that maintains a validated repository of HTTP/S and SOCKS5 proxy nodes, updating latency metrics and health scores hourly.
+- Premium Proxy Support: An administrator configuration panel to append dedicated custom proxy arrays with rotating credentials.
+- Tool Parameter Integration: Every tool execution thread must dynamically wrap commands with active proxy strings to hide the host origin.
+- Live Geolocation Verification Endpoint (`/api/check-ip`):
+  - Case [Proxy Toggle OFF]: The request evaluates directly from the server node. The UI displays the server's real IP and geographic coordinates.
+  - Case [Proxy Toggle ON]: The backend routes the validation query through a randomized proxy node. The UI instantly outputs the spoofed IP, country code, and ISP carrier, visually proving identity masking in real-time.
+
+---
+
+### 5. ADVANCED AI VALIDATION LAYER (FALSE POSITIVE REMEDIATION)
+- Extraction: When fuzzing or vulnerability modules register a hit (e.g., a `200 OK` code on a sensitive path), the core grabs the complete raw HTTP Request and Response payloads.
+- AI Inspection: Send this payload to an AI model (OpenAI API or local Llama 3) via an explicit system prompt: "Analyze this raw server response. Is this a genuine vulnerability exposure or a false positive caused by a firewall, a custom 404 redirection, or a generic error page?"
+- Dynamic Patch Generation: If the AI confirms the finding as a true positive, it must analyze the server header stack, identify the technologies used (e.g., Laravel, React, WordPress), and automatically generate a production-ready mitigation code patch to fix the leak.
+
+---
+
+### 6. PROFESSIONAL REPORT GENERATOR
+Generate downloadable, highly stylized PDF audits via Python libraries (e.g., ReportLab or Weasyprint) containing:
+- Executive Summary: A visual dashboard chart summarizing findings classified by severity metrics (Critical, High, Medium, Low).
+- Scope Matrix: A clean table presenting all executed tools alongside a list of explicitly omitted utilities based on the target's verified tech stack.
+- Remediation Proof: Detailed descriptions of verified vulnerabilities, raw evidence payloads (PoC), and the tailored fix code drafted by the AI layer.
+
+---
+
+### 7. DATABASE SCHEMA DEFINITION
+Provide clean SQLAlchemy or SQL definitions tracking:
+- Users & Tier Permissions (`Node_01` Free, `Node_X` Professional, `Hyper_Core` Enterprise).
+- Live Scan Queue managing active target configurations, processing tools, and timestamps.
+- Vulnerability Log storing AI-validated events, raw server payloads, and code fixes.
+- Proxy Inventory managing available IPs, protocol mappings, latencies, and health rates.
+
+---
+
+### 8. FRONTEND IMPLEMENTATION (TAILWIND CSS & CUSTOM CSS)
+Provide the complete, uncropped, ready-to-run code for these files, incorporating high-contrast green-on-black phosphor glows, CRT monitor scanline background masks, and language switching mechanics:
+
+#### FILE 1: THE CSS STYLESHEET (`static/style.css`)
+Must define:
+- Neon glow filters via precise CSS text-shadow and sharp container box-shadow rules (`0 0 10px rgba(16,185,129,0.2)`).
+- Authentic dark CRT monitor scanline background mask overlay.
+- Tactical tracking, monospace typography layout configurations, and micro-interaction animation loop keyframes (`@keyframes cyberPulse`).
+
+#### FILE 2: AUTHENTIC USER PORTAL WITH BILINGUAL SWITCH (`portal.html`)
+- High-contrast responsive inputs with glowing neon borders on focus.
+- A functional Bilingual Toggle (AR/EN) that correctly shifts text direction.
+- A distinctive card grid layout differentiating `Node_01`, `Node_X` (highlighted with neon borders), and `Hyper_Core` enterprise tiers.
+- Immersive Hacker Loader overlay that runs smoothly before loading content.
+
+#### FILE 3: STRATEGIC ADMISSIONS SYSTEM CONSOLE / ADMIN DASHBOARD (`admin.html`)
+A dense, terminal-grade operations control dashboard containing:
+- Performance Metrics Grid: Revenue tracking, running threads, active logs, and proxy pool status.
+- Live Terminal Viewport Component: Feeding line-by-line streaming log notifications updates seamlessly.
+- Active Tools Management Hub: Displaying all currently available tools, their status, and the GitHub repo URL insertion form to dynamically install new ones.
+- Live Scan Queue Interface: Completed with target tracking records and a high-priority "Force Stop / SIGKILL" button to instantly terminate active execution loops.
+
+Generate everything with zero placeholders, zero compression, and complete structural accuracy.
