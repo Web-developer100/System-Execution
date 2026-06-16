@@ -7,6 +7,7 @@ import proxiesRouter from "./proxies";
 import vulnerabilitiesRouter from "./vulnerabilities";
 import reportsRouter from "./reports";
 import statsRouter from "./stats";
+import systemRouter from "./system";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(proxiesRouter);
 router.use(vulnerabilitiesRouter);
 router.use(reportsRouter);
 router.use(statsRouter);
+router.use(systemRouter);
 
 export default router;

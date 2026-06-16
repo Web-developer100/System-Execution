@@ -1,28 +1,46 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useGetDashboardStats, useGetVulnerabilityStats, getGetDashboardStatsQueryKey } from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
-import { Activity, Shield, AlertTriangle, Terminal, Globe, Cpu, Zap, Eye } from "lucide-react";
+import { Activity, Shield, AlertTriangle, Terminal, Globe, Cpu, Zap, Eye, Clock, MemoryStick, CheckCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 
 const LOG_TEMPLATES = [
-  { msg: "[INFO] UPLINK_SYNC ........ STABLE_V", color: "text-primary" },
-  { msg: "[OK] TARGET_ENTROPY_LOG connected", color: "text-green-400" },
-  { msg: "[WARN] SIGNAL_TPS: 15.2k — threshold approaching", color: "text-yellow-400" },
-  { msg: "[INFO] EXTRACTION_UNIT beacon scanning...", color: "text-primary" },
-  { msg: "[OK] PROXY_NODE_A routing enabled — 47ms", color: "text-green-400" },
-  { msg: "[WARN] PACKET_LOSS detected at node 0x7A", color: "text-yellow-400" },
-  { msg: "[INFO] NEURAL_NET recalibrating weights...", color: "text-primary" },
-  { msg: "[OK] AES-256 handshake confirmed", color: "text-green-400" },
-  { msg: "[INFO] THREAD_POOL: 3 workers active", color: "text-primary" },
-  { msg: "[OK] BYPASS_SUCCESS — protocol exploited", color: "text-green-400" },
-  { msg: "[ERROR] ENCRYPTED_NODE — access denied", color: "text-destructive" },
-  { msg: "[INFO] AI_LAYER validating findings...", color: "text-primary" },
-  { msg: "[OK] CVE-2024-XXXX template matched", color: "text-green-400" },
-  { msg: "[INFO] DNS_ENUM 87 subdomains discovered", color: "text-primary" },
+  { msg: "[V8-KERNEL] UPLINK_SYNC ........ STABLE_V2", color: "text-primary" },
+  { msg: "[OK] TARGET_ENTROPY_LOG connected — session active", color: "text-green-400" },
+  { msg: "[WARN] SIGNAL_TPS: 15.2k — threshold approaching 80%", color: "text-yellow-400" },
+  { msg: "[INFO] SUBFINDER: Enumerating subdomains via passive DNS", color: "text-primary" },
+  { msg: "[OK] PROXY_NODE_A routing enabled — 47ms latency", color: "text-green-400" },
+  { msg: "[WARN] PACKET_LOSS detected at node 0x7A — rerouting", color: "text-yellow-400" },
+  { msg: "[INFO] NEURAL_NET recalibrating weights — epoch 3/5", color: "text-primary" },
+  { msg: "[OK] AES-256 handshake confirmed — channel encrypted", color: "text-green-400" },
+  { msg: "[INFO] THREAD_POOL: 3 workers spawned, 1 idle", color: "text-primary" },
+  { msg: "[OK] FFUF: 4712 paths queued for directory brute-force", color: "text-green-400" },
+  { msg: "[ERROR] ENCRYPTED_NODE 0x9F — access denied, rotating proxy", color: "text-destructive" },
+  { msg: "[INFO] AI_LAYER validating findings — filtering false positives", color: "text-primary" },
+  { msg: "[OK] CVE-2024-27198 template matched — JetBrains confirmed", color: "text-green-400" },
+  { msg: "[INFO] DNS_ENUM: 87 subdomains discovered for target domain", color: "text-primary" },
+  { msg: "[WARN] NAABU: Port 3306 (MySQL) exposed on 0.0.0.0", color: "text-yellow-400" },
+  { msg: "[OK] NUCLEI: 14,823 CVE templates loaded and ready", color: "text-green-400" },
+  { msg: "[INFO] TRIVY: Scanning node_modules for CVE dependencies", color: "text-primary" },
+  { msg: "[WARN] /.env → HTTP 200 [4.3KB] — credentials exposed!", color: "text-destructive" },
+  { msg: "[INFO] SEMGREP: Analyzing JavaScript patterns for SAST", color: "text-primary" },
+  { msg: "[OK] SUBZY: No subdomain takeover vectors detected", color: "text-green-400" },
+  { msg: "[INFO] REPORT_GEN: Compiling executive summary PDF", color: "text-primary" },
+  { msg: "[OK] SCAN_COMPLETE: 6 findings confirmed, 2 filtered", color: "text-green-400" },
 ];
+
+interface SystemMetrics {
+  uptime: string;
+  uptimeSeconds: number;
+  memoryUsedMb: number;
+  memoryTotalMb: number;
+  nodeVersion: string;
+  requestCount: number;
+}
 
 function LiveTerminal() {
   const { t } = useI18n();
@@ -35,9 +53,9 @@ function LiveTerminal() {
       const ts = new Date().toISOString().substring(11, 19);
       setLogs(prev => {
         const updated = [...prev, { ts, ...tpl }];
-        return updated.length > 24 ? updated.slice(-24) : updated;
+        return updated.length > 28 ? updated.slice(-28) : updated;
       });
-    }, 1200);
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -81,6 +99,17 @@ export default function Dashboard() {
   const { data: vulnStats } = useGetVulnerabilityStats();
   const { t } = useI18n();
 
+  const { data: sysMetrics } = useQuery<SystemMetrics>({
+    queryKey: ["systemMetrics"],
+    queryFn: async () => {
+      const res = await fetch("/api/system/metrics");
+      if (!res.ok) throw new Error("metrics fetch failed");
+      return res.json();
+    },
+    refetchInterval: 10_000,
+    staleTime: 5_000,
+  });
+
   const statCards = [
     { label: t('dashboard.total_scans'), value: stats?.totalScans ?? 0, icon: Activity, color: "text-primary", href: "/scans" },
     { label: t('dashboard.active_scans'), value: stats?.activeScans ?? 0, icon: Shield, color: "text-primary", href: "/scans" },
@@ -98,6 +127,8 @@ export default function Dashboard() {
     { label: "INFO", value: vulnStats?.info ?? 0, color: "bg-gray-500", text: "text-gray-400", glow: "" },
   ];
   const total = vulnStats?.total || 1;
+
+  const memPct = sysMetrics ? Math.round((sysMetrics.memoryUsedMb / (sysMetrics.memoryTotalMb || 1)) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -123,6 +154,51 @@ export default function Dashboard() {
               {t('nav.vulnerabilities')}
             </Button>
           </Link>
+        </div>
+      </div>
+
+      {/* System Metrics Bar */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 border border-primary/10 bg-black p-3">
+        <div className="flex items-center gap-3 px-3 py-2 border border-primary/10">
+          <Clock className="w-4 h-4 text-primary/50 shrink-0" />
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-primary/30 font-mono">{t('dashboard.uptime')}</div>
+            <div className="text-sm font-mono text-primary font-bold">
+              {sysMetrics?.uptime ?? "00:00:00"}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 px-3 py-2 border border-primary/10">
+          <MemoryStick className="w-4 h-4 text-primary/50 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] uppercase tracking-wider text-primary/30 font-mono">{t('dashboard.memory')}</div>
+            <div className="flex items-center gap-2">
+              <div className="text-sm font-mono text-primary font-bold">
+                {sysMetrics?.memoryUsedMb ?? 0}MB
+              </div>
+              <div className="flex-1 h-1 bg-primary/10 border border-primary/10">
+                <div className="h-full bg-primary transition-all" style={{ width: `${memPct}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 px-3 py-2 border border-primary/10">
+          <CheckCircle className="w-4 h-4 text-primary/50 shrink-0" />
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-primary/30 font-mono">{t('dashboard.ai_validated')}</div>
+            <div className="text-sm font-mono text-primary font-bold">
+              {(stats as { aiValidatedCount?: number } | undefined)?.aiValidatedCount ?? 0}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 px-3 py-2 border border-primary/10">
+          <XCircle className="w-4 h-4 text-primary/30 shrink-0" />
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-primary/30 font-mono">{t('dashboard.false_positives')}</div>
+            <div className="text-sm font-mono text-primary/60 font-bold">
+              {(stats as { falsePositives?: number } | undefined)?.falsePositives ?? 0}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -156,7 +232,7 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Vuln Breakdown + Terminal */}
+      {/* Vuln Breakdown + Quick Actions + Terminal */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Severity Chart */}
         <Card className="bg-card border-primary/20 glow-box">

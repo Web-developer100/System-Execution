@@ -22,6 +22,12 @@ router.get("/stats/dashboard", async (_req, res) => {
     const lowCount = vulns.filter(v => v.severity === "low").length;
     const activeProxies = proxies.filter(p => p.status === "active").length;
     const activeTools = tools.filter(t => t.status === "active").length;
+    const aiValidatedCount = vulns.filter(v => v.aiValidated).length;
+    const falsePositives = vulns.filter(v => v.status === "false_positive").length;
+
+    const uptimeSeconds = Math.floor(process.uptime());
+    const mem = process.memoryUsage();
+    const memUsedMb = Math.round(mem.heapUsed / 1024 / 1024);
 
     return res.json({
       totalScans: scans.length,
@@ -34,6 +40,10 @@ router.get("/stats/dashboard", async (_req, res) => {
       proxyPoolSize: activeProxies,
       toolsActive: activeTools,
       threadsRunning: activeScans * 3,
+      aiValidatedCount,
+      falsePositives,
+      uptimeSeconds,
+      memUsedMb,
     });
   } catch (err) {
     logger.error({ err }, "Dashboard stats error");

@@ -2,11 +2,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { Link, useLocation } from "wouter";
 import {
   LayoutDashboard, Shield, Wrench, Globe, Bug, FileText,
-  LogOut, Languages, Terminal, ChevronRight
+  LogOut, Languages, Terminal, ChevronRight, Crown, Star, Circle
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useLogout } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
 
 const APP_VERSION = "2.0.4";
 
@@ -19,11 +20,63 @@ const NAV_ITEMS = [
   { href: "/reports", labelKey: "nav.reports", icon: FileText },
 ];
 
+interface UserInfo {
+  id: number;
+  username: string;
+  role: string;
+  tier: string;
+}
+
+const TIER_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; icon: typeof Crown; glow: string }> = {
+  Hyper_Core: {
+    label: "HYPER_CORE",
+    color: "text-amber-400",
+    bg: "bg-amber-400/10",
+    border: "border-amber-400/50",
+    icon: Crown,
+    glow: "shadow-[0_0_8px_rgba(251,191,36,0.3)]",
+  },
+  Node_X: {
+    label: "NODE_X",
+    color: "text-cyan-400",
+    bg: "bg-cyan-400/10",
+    border: "border-cyan-400/40",
+    icon: Star,
+    glow: "shadow-[0_0_6px_rgba(34,211,238,0.2)]",
+  },
+  Node_01: {
+    label: "NODE_01",
+    color: "text-primary",
+    bg: "bg-primary/10",
+    border: "border-primary/40",
+    icon: Circle,
+    glow: "",
+  },
+};
+
+function useCurrentUser(token: string | null) {
+  return useQuery<UserInfo | null>({
+    queryKey: ["currentUser", token],
+    queryFn: async () => {
+      if (!token) return null;
+      const res = await fetch("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      return res.json() as Promise<UserInfo>;
+    },
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, setToken } = useAuth();
+  const { isAuthenticated, setToken, token } = useAuth();
   const [location, setLocation] = useLocation();
   const { t, toggleLang, lang } = useI18n();
   const logoutMut = useLogout();
+  const { data: user } = useCurrentUser(token);
 
   if (!isAuthenticated) {
     return <>{children}</>;
@@ -37,6 +90,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       }
     });
   };
+
+  const tierCfg = user?.tier ? (TIER_CONFIG[user.tier] ?? TIER_CONFIG.Node_01) : null;
+  const TierIcon = tierCfg?.icon ?? Circle;
 
   return (
     <div className="min-h-[100dvh] w-full flex crt relative overflow-hidden bg-background text-foreground">
@@ -59,8 +115,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
+        {/* User Tier Badge */}
+        {user && tierCfg ? (
+          <div className={`mx-3 mt-3 px-3 py-2.5 border ${tierCfg.border} ${tierCfg.bg} ${tierCfg.glow}`}>
+            <div className="flex items-center gap-2">
+              <TierIcon className={`w-3.5 h-3.5 shrink-0 ${tierCfg.color}`} />
+              <div className="flex-1 min-w-0">
+                <div className={`text-[10px] font-mono font-bold tracking-widest uppercase ${tierCfg.color}`}>
+                  {tierCfg.label}
+                </div>
+                <div className="text-[10px] text-primary/40 font-mono truncate mt-0.5">
+                  {user.username.toUpperCase()}
+                </div>
+              </div>
+              <div className={`w-1.5 h-1.5 rounded-full ${tierCfg.color} animate-pulse`} />
+            </div>
+          </div>
+        ) : (
+          <div className="mx-3 mt-3 px-3 py-2 border border-primary/10 bg-primary/5">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <div className="text-[10px] text-primary/40 font-mono tracking-widest">AUTHENTICATING...</div>
+            </div>
+          </div>
+        )}
+
         {/* Version badge */}
-        <div className="px-5 py-2 border-b border-primary/10">
+        <div className="px-5 py-2 border-b border-primary/10 mt-2">
           <div className="flex items-center justify-between text-[10px] font-mono text-primary/30 uppercase tracking-widest">
             <span>{t('app.version')}</span>
             <span className="text-primary/50">v{APP_VERSION}</span>
@@ -115,7 +196,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Button>
 
           <div className="text-center text-primary/20 text-[10px] font-mono tracking-widest pt-1">
-            ENCRYPTION: AES-256-BIT
+            AES-256-BIT ● SECURE_CHANNEL
           </div>
         </div>
       </aside>
@@ -129,6 +210,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             SYSTEM_KERNEL_V{APP_VERSION}
             <span className="text-primary/20 mx-2">|</span>
             PROCESS_LIVE
+            {user?.tier === "Hyper_Core" && (
+              <>
+                <span className="text-primary/20 mx-2">|</span>
+                <span className="text-amber-400/60">ENTERPRISE_MODE</span>
+              </>
+            )}
           </div>
           <div className="text-[11px] font-mono text-primary/30 uppercase tracking-widest">
             {new Date().toISOString().substring(0, 10)}

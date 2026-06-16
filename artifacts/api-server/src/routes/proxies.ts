@@ -7,6 +7,17 @@ const router: IRouter = Router();
 
 let proxyEnabled = false;
 
+interface GeoData {
+  ip: string;
+  country: string;
+  isp: string;
+  city: string;
+  lat: number;
+  lon: number;
+  countryCode?: string;
+  timezone?: string;
+}
+
 function formatProxy(p: typeof proxiesTable.$inferSelect) {
   return {
     id: p.id,
@@ -18,6 +29,43 @@ function formatProxy(p: typeof proxiesTable.$inferSelect) {
     country: p.country ?? null,
     isp: p.isp ?? null,
     healthScore: p.healthScore ?? null,
+  };
+}
+
+async function getRealServerGeo(): Promise<GeoData> {
+  try {
+    const res = await fetch("https://ipapi.co/json/", {
+      headers: { "Accept": "application/json", "User-Agent": "V8-Platform/2.0.4" },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (res.ok) {
+      const geo = await res.json() as {
+        ip?: string; country_name?: string; org?: string; city?: string;
+        latitude?: number; longitude?: number; country_code?: string; timezone?: string;
+      };
+      return {
+        ip: geo.ip ?? "0.0.0.0",
+        country: geo.country_name ?? "Unknown",
+        isp: geo.org ?? "Unknown ISP",
+        city: geo.city ?? "Unknown",
+        lat: geo.latitude ?? 0,
+        lon: geo.longitude ?? 0,
+        countryCode: geo.country_code,
+        timezone: geo.timezone,
+      };
+    }
+  } catch (err) {
+    logger.warn({ err }, "ipapi.co geolocation failed — using fallback");
+  }
+  return {
+    ip: "185.199.108.153",
+    country: "United States",
+    isp: "AS36459 GitHub, Inc.",
+    city: "San Francisco",
+    lat: 37.7749,
+    lon: -122.4194,
+    countryCode: "US",
+    timezone: "America/Los_Angeles",
   };
 }
 
@@ -40,15 +88,31 @@ router.post("/proxies", async (req, res) => {
   if (!ip || !port || !protocol) {
     return res.status(400).json({ error: "ip, port, protocol required" });
   }
+
+  // Attempt real geolocation for newly added proxy IP
+  let geoCountry = "Unknown";
+  let geoIsp = "Unknown ISP";
+  try {
+    const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {
+      headers: { "Accept": "application/json", "User-Agent": "V8-Platform/2.0.4" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (geoRes.ok) {
+      const geo = await geoRes.json() as { country_name?: string; org?: string; city?: string };
+      geoCountry = [geo.city, geo.country_name].filter(Boolean).join(", ") || "Unknown";
+      geoIsp = geo.org ?? "Unknown ISP";
+    }
+  } catch {}
+
   try {
     const [proxy] = await db.insert(proxiesTable).values({
       ip, port, protocol,
       username: username ?? null,
       password: password ?? null,
       status: "active",
-      latency: Math.floor(Math.random() * 150) + 20,
-      country: "Unknown",
-      isp: "Unknown ISP",
+      latency: Math.floor(Math.random() * 180) + 15,
+      country: geoCountry,
+      isp: geoIsp,
       healthScore: 95,
     }).returning();
     return res.status(201).json(formatProxy(proxy));
@@ -75,31 +139,26 @@ router.delete("/proxies/:id", async (req, res) => {
 router.get("/proxies/check-ip", async (_req, res) => {
   try {
     if (proxyEnabled) {
-      // Return a spoofed proxy IP
       const proxies = await db.select().from(proxiesTable).where(eq(proxiesTable.status, "active"));
       const proxy = proxies[Math.floor(Math.random() * proxies.length)];
       if (proxy) {
+        const spoofedCities = ["Amsterdam", "Frankfurt", "Singapore", "Tokyo", "London", "Paris"];
+        const spoofedIsps = ["DataPipe LLC", "Hetzner Online GmbH", "Digital Ocean Inc", "Vultr Holdings", "OVH SAS"];
         return res.json({
           ip: proxy.ip,
           country: proxy.country ?? "Netherlands",
-          isp: proxy.isp ?? "DataPipe LLC",
-          city: "Amsterdam",
-          lat: 52.3676,
-          lon: 4.9041,
+          isp: spoofedIsps[Math.floor(Math.random() * spoofedIsps.length)],
+          city: spoofedCities[Math.floor(Math.random() * spoofedCities.length)],
+          lat: 48.8566 + (Math.random() - 0.5) * 20,
+          lon: 2.3522 + (Math.random() - 0.5) * 20,
+          countryCode: "NL",
           proxyEnabled: true,
+          masked: true,
         });
       }
     }
-    // Return server's real IP info (mock for demo)
-    return res.json({
-      ip: "185.199.108.153",
-      country: "United States",
-      isp: "GitHub Inc.",
-      city: "San Francisco",
-      lat: 37.7749,
-      lon: -122.4194,
-      proxyEnabled: false,
-    });
+    const geo = await getRealServerGeo();
+    return res.json({ ...geo, proxyEnabled: false, masked: false });
   } catch (err) {
     logger.error({ err }, "Check IP error");
     return res.status(500).json({ error: "Internal server error" });
@@ -115,26 +174,22 @@ router.post("/proxies/toggle", async (req, res) => {
       const proxies = await db.select().from(proxiesTable).where(eq(proxiesTable.status, "active"));
       const proxy = proxies[Math.floor(Math.random() * proxies.length)];
       if (proxy) {
+        const spoofedCities = ["Amsterdam", "Frankfurt", "Singapore", "Tokyo", "London", "Paris", "Dubai"];
         return res.json({
           ip: proxy.ip,
           country: proxy.country ?? "Netherlands",
-          isp: proxy.isp ?? "DataPipe LLC",
-          city: "Amsterdam",
+          isp: "DataPipe LLC — Exit Node",
+          city: spoofedCities[Math.floor(Math.random() * spoofedCities.length)],
           lat: 52.3676,
           lon: 4.9041,
+          countryCode: "NL",
           proxyEnabled: true,
+          masked: true,
         });
       }
     }
-    return res.json({
-      ip: "185.199.108.153",
-      country: "United States",
-      isp: "GitHub Inc.",
-      city: "San Francisco",
-      lat: 37.7749,
-      lon: -122.4194,
-      proxyEnabled: false,
-    });
+    const geo = await getRealServerGeo();
+    return res.json({ ...geo, proxyEnabled: false, masked: false });
   } catch (err) {
     logger.error({ err }, "Toggle proxy error");
     return res.status(500).json({ error: "Internal server error" });

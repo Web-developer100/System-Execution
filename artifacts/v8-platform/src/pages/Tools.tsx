@@ -1,6 +1,6 @@
 import { useGetTools, useInstallTool, useDeleteTool, useUpdateTool, getGetToolsQueryKey } from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
-import { Wrench, Github, RefreshCw, Trash2, CheckCircle2, XCircle, AlertCircle, Plus } from "lucide-react";
+import { Wrench, Github, RefreshCw, Trash2, CheckCircle2, XCircle, AlertCircle, Plus, Loader2, GitBranch, Package, TestTube, Cpu } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,15 +10,71 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const STATUS_CONFIG = {
-  active:   { icon: CheckCircle2, color: "text-primary border-primary bg-primary/10", label: "ACTIVE" },
-  inactive: { icon: XCircle,      color: "text-primary/40 border-primary/20 bg-primary/5", label: "INACTIVE" },
-  updating: { icon: RefreshCw,    color: "text-yellow-400 border-yellow-500/50 bg-yellow-500/10", label: "UPDATING" },
-  error:    { icon: XCircle,      color: "text-destructive border-destructive/50 bg-destructive/10", label: "ERROR" },
+  active:     { icon: CheckCircle2, color: "text-primary border-primary bg-primary/10", label: "ACTIVE" },
+  inactive:   { icon: XCircle,      color: "text-primary/40 border-primary/20 bg-primary/5", label: "INACTIVE" },
+  updating:   { icon: RefreshCw,    color: "text-yellow-400 border-yellow-500/50 bg-yellow-500/10", label: "UPDATING" },
+  installing: { icon: Loader2,      color: "text-cyan-400 border-cyan-400/50 bg-cyan-400/10", label: "INSTALLING" },
+  error:      { icon: XCircle,      color: "text-destructive border-destructive/50 bg-destructive/10", label: "ERROR" },
 };
+
+const INSTALL_STEPS = [
+  { keyword: "INIT",    icon: Github,    label: "Connecting to GitHub..." },
+  { keyword: "CLONE",   icon: GitBranch, label: "Cloning repository..." },
+  { keyword: "DEPS",    icon: Package,   label: "Analyzing dependencies..." },
+  { keyword: "BUILD",   icon: Cpu,       label: "Compiling binary..." },
+  { keyword: "SANDBOX", icon: TestTube,  label: "Running stability test..." },
+  { keyword: "INJECT",  icon: Wrench,    label: "Injecting into pipeline..." },
+];
+
+function getInstallStep(description: string | null): number {
+  if (!description) return 0;
+  for (let i = INSTALL_STEPS.length - 1; i >= 0; i--) {
+    if (description.includes(INSTALL_STEPS[i].keyword)) return i;
+  }
+  return 0;
+}
+
+function InstallProgress({ description }: { description: string | null }) {
+  const currentStep = getInstallStep(description);
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="text-[10px] uppercase tracking-widest text-primary/30 font-mono mb-2">INSTALL PIPELINE</div>
+      <div className="space-y-1.5">
+        {INSTALL_STEPS.map((step, idx) => {
+          const Icon = step.icon;
+          const done = idx < currentStep;
+          const active = idx === currentStep;
+          return (
+            <div key={idx} className={`flex items-center gap-2 text-[10px] font-mono transition-all ${
+              done ? "text-primary/60" : active ? "text-cyan-400" : "text-primary/20"
+            }`}>
+              {done ? (
+                <CheckCircle2 className="w-3 h-3 shrink-0 text-primary/40" />
+              ) : active ? (
+                <Icon className="w-3 h-3 shrink-0 animate-spin" />
+              ) : (
+                <div className="w-3 h-3 shrink-0 border border-primary/10 rounded-full" />
+              )}
+              <span className={active ? "animate-pulse" : ""}>{step.label}</span>
+            </div>
+          );
+        })}
+      </div>
+      {description && (
+        <div className="mt-2 px-2 py-1.5 bg-black border border-cyan-400/20 text-[10px] font-mono text-cyan-400/70 leading-relaxed">
+          {description}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Tools() {
   const { data: tools, isLoading } = useGetTools({
-    query: { queryKey: getGetToolsQueryKey(), refetchInterval: 30_000 }
+    query: {
+      queryKey: getGetToolsQueryKey(),
+      refetchInterval: 5000,
+    }
   });
   const installMut = useInstallTool();
   const deleteMut = useDeleteTool();
@@ -29,7 +85,6 @@ export default function Tools() {
 
   const [repoUrl, setRepoUrl] = useState("");
   const [toolName, setToolName] = useState("");
-  const [toolDesc, setToolDesc] = useState("");
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getGetToolsQueryKey() });
 
@@ -37,23 +92,23 @@ export default function Tools() {
     e.preventDefault();
     if (!repoUrl.trim() || !toolName.trim()) return;
     installMut.mutate(
-      { data: { name: toolName.trim(), githubUrl: repoUrl.trim(), description: toolDesc.trim() } },
+      { data: { name: toolName.trim(), githubUrl: repoUrl.trim() } },
       {
         onSuccess: () => {
           invalidate();
           setRepoUrl("");
           setToolName("");
-          setToolDesc("");
-          toast({ title: "TOOL INSTALLED", description: `${toolName} injected into arsenal.` });
+          toast({ title: "INSTALL PIPELINE STARTED", description: `${toolName} — cloning and building from GitHub. Monitor progress below.` });
         },
         onError: () => {
-          toast({ title: "INSTALL FAILED", description: "Could not install tool.", variant: "destructive" });
+          toast({ title: "INSTALL FAILED", description: "Could not start installation pipeline.", variant: "destructive" });
         }
       }
     );
   };
 
   const activeCount = tools?.filter(t => t.status === "active").length ?? 0;
+  const installingCount = tools?.filter(t => (t.status as string) === "installing").length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -64,24 +119,27 @@ export default function Tools() {
             {t('tools.title')}
           </h1>
           <p className="text-primary/40 text-xs font-mono mt-1">
-            {activeCount} ACTIVE ● {(tools?.length ?? 0) - activeCount} OFFLINE
+            {activeCount} ACTIVE ● {installingCount} INSTALLING ● {(tools?.length ?? 0) - activeCount - installingCount} OFFLINE
           </p>
         </div>
       </div>
 
-      {/* Install Form */}
+      {/* GitHub Install Pipeline */}
       <div className="border border-primary/30 glow-box bg-card p-5">
-        <div className="flex items-center gap-2 text-primary glow-text text-sm uppercase tracking-widest mb-4">
-          <Plus className="w-4 h-4" />
+        <div className="flex items-center gap-2 text-primary glow-text text-sm uppercase tracking-widest mb-1">
+          <Github className="w-4 h-4" />
           {t('tools.install_title')}
         </div>
+        <p className="text-[11px] text-primary/30 font-mono mb-4">
+          Clone → Parse Dependencies → Stability Test → Inject into Orchestration Pipeline
+        </p>
         <form onSubmit={handleInstall} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
           <div className="space-y-1.5">
             <label className="text-[11px] uppercase tracking-wider text-primary/50 font-mono">{t('tools.name_label')}</label>
             <Input
               value={toolName}
               onChange={e => setToolName(e.target.value)}
-              placeholder="e.g. subfinder"
+              placeholder="e.g. nuclei"
               className="bg-black border-primary/30 text-primary h-11 rounded-none focus-visible:ring-primary/50 font-mono"
             />
           </div>
@@ -102,7 +160,11 @@ export default function Tools() {
             disabled={installMut.isPending || !toolName.trim() || !repoUrl.trim()}
             className="bg-primary text-black h-11 rounded-none glow-box uppercase tracking-widest text-xs font-bold"
           >
-            {installMut.isPending ? "INSTALLING..." : t('action.install_tool')}
+            {installMut.isPending ? (
+              <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> {t('tools.installing')}</>
+            ) : (
+              <><Plus className="w-3 h-3 mr-1.5" /> {t('action.install_tool')}</>
+            )}
           </Button>
         </form>
       </div>
@@ -123,12 +185,19 @@ export default function Tools() {
           {tools.map(tool => {
             const cfg = STATUS_CONFIG[tool.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.inactive;
             const Icon = cfg.icon;
+            const isInstalling = (tool.status as string) === "installing";
+            const isUpdating = (tool.status as string) === "updating";
             return (
               <Card
                 key={tool.id}
-                className="bg-card border-primary/20 hover:border-primary/50 transition-all group relative overflow-hidden"
+                className={`bg-card border-primary/20 hover:border-primary/50 transition-all group relative overflow-hidden ${
+                  isInstalling ? "border-cyan-400/30" : ""
+                }`}
                 data-testid={`card-tool-${tool.id}`}
               >
+                {isInstalling && (
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse" />
+                )}
                 <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 pointer-events-none transition-opacity">
                   <Wrench className="w-20 h-20 text-primary" />
                 </div>
@@ -138,63 +207,69 @@ export default function Tools() {
                       {tool.name}
                     </div>
                     <Badge variant="outline" className={`uppercase text-[10px] font-mono rounded-none border ${cfg.color}`}>
-                      <Icon className={`w-3 h-3 mr-1 ${tool.status === 'updating' ? 'animate-spin' : ''}`} />
+                      <Icon className={`w-3 h-3 mr-1 ${(isInstalling || isUpdating) ? 'animate-spin' : ''}`} />
                       {cfg.label}
                     </Badge>
                   </div>
-                  {tool.description && (
+                  {!isInstalling && tool.description && (
                     <p className="text-xs text-primary/40 mt-1 font-mono leading-relaxed line-clamp-2">
                       {tool.description}
                     </p>
                   )}
                 </CardHeader>
                 <CardContent className="px-4 pb-4">
-                  {tool.githubUrl && (
-                    <div className="text-[11px] text-primary/30 font-mono mb-3 truncate flex items-center gap-1.5">
-                      <Github className="w-3 h-3 shrink-0" />
-                      {tool.githubUrl.replace("https://github.com/", "")}
-                    </div>
+                  {isInstalling ? (
+                    <InstallProgress description={tool.description ?? null} />
+                  ) : (
+                    <>
+                      {tool.githubUrl && (
+                        <div className="text-[11px] text-primary/30 font-mono mb-3 truncate flex items-center gap-1.5">
+                          <Github className="w-3 h-3 shrink-0" />
+                          {tool.githubUrl.replace("https://github.com/", "")}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-primary/40 border-t border-primary/10 pt-3 mb-3">
+                        <div>
+                          <div className="text-primary/20 uppercase">{t('tools.version')}</div>
+                          <div className="text-primary/60">{tool.version ?? "N/A"}</div>
+                        </div>
+                        <div>
+                          <div className="text-primary/20 uppercase">{t('tools.health')}</div>
+                          <div className={tool.healthScore && tool.healthScore > 80 ? "text-primary/60" : "text-destructive/70"}>
+                            {tool.healthScore ?? 0}%
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-primary/20 uppercase">{t('tools.last_checked')}</div>
+                          <div className="text-primary/40">
+                            {tool.lastChecked ? new Date(tool.lastChecked).toLocaleDateString() : "—"}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 h-8 border-primary/20 text-primary/60 hover:border-primary/60 hover:text-primary rounded-none text-[11px] uppercase tracking-wider"
+                          onClick={() => updateMut.mutate({ id: tool.id }, { onSuccess: invalidate })}
+                          disabled={updateMut.isPending || tool.status === 'updating'}
+                          data-testid={`button-update-${tool.id}`}
+                        >
+                          <Github className={`w-3 h-3 mr-1.5 ${updateMut.isPending ? 'animate-spin' : ''}`} />
+                          {t('tools.check_update')}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-primary/30 hover:bg-destructive/10 hover:text-destructive rounded-none"
+                          onClick={() => deleteMut.mutate({ id: tool.id }, { onSuccess: invalidate })}
+                          data-testid={`button-delete-${tool.id}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </>
                   )}
-                  <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-primary/40 border-t border-primary/10 pt-3 mb-3">
-                    <div>
-                      <div className="text-primary/20 uppercase">{t('tools.version')}</div>
-                      <div className="text-primary/60">{tool.version ?? "N/A"}</div>
-                    </div>
-                    <div>
-                      <div className="text-primary/20 uppercase">{t('tools.health')}</div>
-                      <div className={tool.healthScore && tool.healthScore > 80 ? "text-primary/60" : "text-destructive/70"}>
-                        {tool.healthScore ?? 0}%
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-primary/20 uppercase">{t('tools.last_checked')}</div>
-                      <div className="text-primary/40">
-                        {tool.lastChecked ? new Date(tool.lastChecked).toLocaleDateString() : "—"}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 h-8 border-primary/20 text-primary/60 hover:border-primary/60 hover:text-primary rounded-none text-[11px] uppercase tracking-wider"
-                      onClick={() => updateMut.mutate({ id: tool.id }, { onSuccess: invalidate })}
-                      disabled={updateMut.isPending || tool.status === 'updating'}
-                      data-testid={`button-update-${tool.id}`}
-                    >
-                      <RefreshCw className={`w-3 h-3 mr-1.5 ${updateMut.isPending ? 'animate-spin' : ''}`} />
-                      {t('common.update')}
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-primary/30 hover:bg-destructive/10 hover:text-destructive rounded-none"
-                      onClick={() => deleteMut.mutate({ id: tool.id }, { onSuccess: invalidate })}
-                      data-testid={`button-delete-${tool.id}`}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
             );

@@ -3,13 +3,15 @@ import {
   useGetVulnerabilities, useGetVulnerabilityStats,
   getGetVulnerabilitiesQueryKey,
 } from "@workspace/api-client-react";
-import type { Vulnerability, VulnerabilityStats } from "@workspace/api-client-react";
+import type { Vulnerability } from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
-import { Bug, Cpu, ChevronRight, X } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Bug, Cpu, ChevronRight, X, Loader2, Sparkles } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 type Severity = "critical" | "high" | "medium" | "low" | "info";
 
@@ -69,9 +71,12 @@ export default function Vulnerabilities() {
     }
   });
   const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [filter, setFilter] = useState<Severity | "all">("all");
   const [selected, setSelected] = useState<Vulnerability | null>(null);
+  const [validating, setValidating] = useState<Set<number>>(new Set());
 
   const filtered = filter === "all"
     ? (vulns ?? [])
@@ -80,6 +85,37 @@ export default function Vulnerabilities() {
   const getCount = (sev: Severity): number => {
     if (!stats) return 0;
     return stats[sev] ?? 0;
+  };
+
+  const handleValidate = async (vulnId: number, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setValidating(prev => new Set(prev).add(vulnId));
+    try {
+      const token = localStorage.getItem("v8_token");
+      const res = await fetch(`/api/vulnerabilities/${vulnId}/validate`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token ?? ""}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (res.ok) {
+        const updated = await res.json() as Vulnerability;
+        await queryClient.invalidateQueries({ queryKey: getGetVulnerabilitiesQueryKey() });
+        // Update the selected dialog too
+        setSelected(prev => (prev?.id === vulnId ? updated : prev));
+        toast({
+          title: "AI VALIDATION COMPLETE",
+          description: "Finding classified as TRUE POSITIVE — remediation patch generated.",
+        });
+      } else {
+        throw new Error("Validation failed");
+      }
+    } catch {
+      toast({ title: "AI VALIDATION FAILED", description: "Could not reach validation layer.", variant: "destructive" });
+    } finally {
+      setValidating(prev => { const s = new Set(prev); s.delete(vulnId); return s; });
+    }
   };
 
   return (
@@ -91,7 +127,7 @@ export default function Vulnerabilities() {
             {t('vulns.title')}
           </h1>
           <p className="text-primary/40 text-xs font-mono mt-1">
-            {stats?.total ?? 0} FINDINGS IN DATABASE
+            {stats?.total ?? 0} FINDINGS ● {vulns?.filter(v => v.aiValidated).length ?? 0} AI VERIFIED
           </p>
         </div>
       </div>
@@ -149,6 +185,7 @@ export default function Vulnerabilities() {
           </div>
         ) : filtered.map(vuln => {
           const cfg = SEVERITY_CONFIG[vuln.severity as Severity] || SEVERITY_CONFIG.info;
+          const isValidating = validating.has(vuln.id);
           return (
             <div
               key={vuln.id}
@@ -170,14 +207,30 @@ export default function Vulnerabilities() {
                   </div>
                   <div className="text-xs text-primary/40 font-mono truncate">{vuln.url}</div>
                   {vuln.description && (
-                    <p className="text-xs text-primary/50 leading-relaxed line-clamp-2">{vuln.description}</p>
+                    <p className="text-xs text-primary/50 leading-relaxed line-clamp-2">
+                      {vuln.description.split('\n\nAI ANALYSIS:')[0]}
+                    </p>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
-                  {vuln.aiValidated && (
+                  {vuln.aiValidated ? (
                     <Badge variant="outline" className="border-primary/50 text-primary bg-primary/5 gap-1 rounded-none text-[10px] uppercase font-mono">
                       <Cpu className="w-3 h-3" /> {t('vulns.ai_verified')}
                     </Badge>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 px-2.5 border-cyan-400/30 text-cyan-400/70 hover:bg-cyan-400/10 hover:text-cyan-400 hover:border-cyan-400/60 rounded-none text-[10px] uppercase tracking-wider font-mono"
+                      onClick={e => handleValidate(vuln.id, e)}
+                      disabled={isValidating}
+                    >
+                      {isValidating ? (
+                        <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> {t('vulns.ai_validating')}</>
+                      ) : (
+                        <><Sparkles className="w-3 h-3 mr-1" /> {t('vulns.ai_validate')}</>
+                      )}
+                    </Button>
                   )}
                   <span className="text-[10px] text-primary/30 font-mono">SCAN#{vuln.scanId}</span>
                   <Badge variant="outline" className={`rounded-none text-[10px] font-mono uppercase border ${
@@ -200,15 +253,30 @@ export default function Vulnerabilities() {
         <DialogContent className="bg-black border-primary/40 text-primary max-w-3xl max-h-[85vh] overflow-y-auto rounded-none">
           {selected && (() => {
             const cfg = SEVERITY_CONFIG[selected.severity as Severity] || SEVERITY_CONFIG.info;
+            const isValidatingSelected = validating.has(selected.id);
+            const [desc, aiAnalysis] = (selected.description ?? "").split('\n\nAI ANALYSIS:');
             return (
               <>
                 <DialogHeader className="border-b border-primary/20 pb-4">
                   <div className="flex flex-wrap items-center gap-3">
                     <SeverityBadge severity={selected.severity} />
-                    {selected.aiValidated && (
+                    {selected.aiValidated ? (
                       <Badge variant="outline" className="border-primary/40 text-primary bg-primary/10 gap-1 rounded-none text-[10px] uppercase font-mono">
                         <Cpu className="w-3 h-3" /> AI VERIFIED
                       </Badge>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="h-7 px-3 bg-cyan-400/10 border border-cyan-400/40 text-cyan-400 hover:bg-cyan-400/20 rounded-none text-[10px] uppercase tracking-wider font-mono"
+                        onClick={() => handleValidate(selected.id)}
+                        disabled={isValidatingSelected}
+                      >
+                        {isValidatingSelected ? (
+                          <><Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> {t('vulns.ai_validating')}</>
+                        ) : (
+                          <><Sparkles className="w-3 h-3 mr-1.5" /> {t('vulns.ai_validate')}</>
+                        )}
+                      </Button>
                     )}
                   </div>
                   <DialogTitle className={`text-xl font-bold tracking-wide glow-text font-mono mt-2 ${cfg.color}`}>
@@ -223,13 +291,23 @@ export default function Vulnerabilities() {
                 </DialogHeader>
 
                 <div className="space-y-6 mt-2">
-                  {selected.description && (
+                  {desc && (
                     <div>
                       <h4 className="text-[11px] uppercase tracking-widest text-primary/40 font-mono mb-2 flex items-center gap-2">
                         <span className="w-4 h-px bg-primary/30" />
                         {t('vulns.description')}
                       </h4>
-                      <p className="text-sm text-primary/80 leading-relaxed font-mono">{selected.description}</p>
+                      <p className="text-sm text-primary/80 leading-relaxed font-mono">{desc}</p>
+                    </div>
+                  )}
+
+                  {aiAnalysis && (
+                    <div className="border border-primary/20 bg-primary/5 p-4">
+                      <h4 className="text-[11px] uppercase tracking-widest text-primary/60 font-mono mb-2 flex items-center gap-2">
+                        <Cpu className="w-3 h-3" />
+                        AI ANALYSIS RESULT
+                      </h4>
+                      <p className="text-xs text-primary/70 leading-relaxed font-mono">AI ANALYSIS: {aiAnalysis}</p>
                     </div>
                   )}
 
@@ -249,9 +327,11 @@ export default function Vulnerabilities() {
                     <div>
                       <h4 className="text-[11px] uppercase tracking-widest text-primary/40 font-mono mb-2 flex items-center gap-2">
                         <span className="w-4 h-px bg-primary/30" />
-                        {t('vulns.fix')}
+                        {selected.aiValidated ? "◆ AI-GENERATED REMEDIATION PATCH" : t('vulns.fix')}
                       </h4>
-                      <div className="bg-black border border-primary/20 p-4 font-mono text-xs text-primary/80 whitespace-pre-wrap leading-5">
+                      <div className={`bg-black border p-4 font-mono text-xs whitespace-pre-wrap leading-5 overflow-x-auto ${
+                        selected.aiValidated ? "border-primary/30 text-primary/90" : "border-primary/20 text-primary/70"
+                      }`}>
                         {selected.fix}
                       </div>
                     </div>
