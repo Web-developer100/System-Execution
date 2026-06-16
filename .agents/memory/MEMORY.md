@@ -1,0 +1,1 @@
+- [V8 Platform Auth](v8-platform-auth.md) — Simple base64 token auth; admin=admin/admin123; token key in localStorage is "v8_token"

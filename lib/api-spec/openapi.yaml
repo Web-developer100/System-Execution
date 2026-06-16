@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: V8 Neural Exploitation Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: scans
+    description: Vulnerability scan management
+  - name: tools
+    description: Security tools management
+  - name: proxies
+    description: Proxy pool management
+  - name: vulnerabilities
+    description: Vulnerability findings
+  - name: reports
+    description: Report generation
+  - name: stats
+    description: Dashboard statistics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +37,391 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login to the platform
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /stats/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      summary: Get dashboard overview statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /scans:
+    get:
+      operationId: getScans
+      tags: [scans]
+      summary: List all scans
+      responses:
+        "200":
+          description: List of scans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Scan"
+    post:
+      operationId: createScan
+      tags: [scans]
+      summary: Create a new scan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScanInput"
+      responses:
+        "201":
+          description: Scan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scan"
+
+  /scans/{id}:
+    get:
+      operationId: getScan
+      tags: [scans]
+      summary: Get a scan by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Scan details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scan"
+    delete:
+      operationId: deleteScan
+      tags: [scans]
+      summary: Delete a scan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /scans/{id}/stop:
+    post:
+      operationId: stopScan
+      tags: [scans]
+      summary: Force stop / SIGKILL a running scan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Scan stopped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scan"
+
+  /scans/{id}/logs:
+    get:
+      operationId: getScanLogs
+      tags: [scans]
+      summary: Get streaming log lines for a scan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Log lines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LogLine"
+
+  /tools:
+    get:
+      operationId: getTools
+      tags: [tools]
+      summary: List all installed tools
+      responses:
+        "200":
+          description: Tools list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Tool"
+    post:
+      operationId: installTool
+      tags: [tools]
+      summary: Install a tool from GitHub URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToolInput"
+      responses:
+        "201":
+          description: Tool installed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tool"
+
+  /tools/{id}:
+    delete:
+      operationId: deleteTool
+      tags: [tools]
+      summary: Remove an installed tool
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /tools/{id}/update:
+    post:
+      operationId: updateTool
+      tags: [tools]
+      summary: Update a tool from its GitHub repo
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tool updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tool"
+
+  /proxies:
+    get:
+      operationId: getProxies
+      tags: [proxies]
+      summary: List proxy pool
+      responses:
+        "200":
+          description: Proxy list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Proxy"
+    post:
+      operationId: addProxy
+      tags: [proxies]
+      summary: Add a proxy to the pool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProxyInput"
+      responses:
+        "201":
+          description: Proxy added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proxy"
+
+  /proxies/{id}:
+    delete:
+      operationId: deleteProxy
+      tags: [proxies]
+      summary: Remove a proxy
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /proxies/check-ip:
+    get:
+      operationId: checkCurrentIp
+      tags: [proxies]
+      summary: Check current outbound IP (with or without proxy)
+      responses:
+        "200":
+          description: Current IP info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IpInfo"
+
+  /proxies/toggle:
+    post:
+      operationId: toggleProxyMode
+      tags: [proxies]
+      summary: Enable or disable proxy routing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProxyToggle"
+      responses:
+        "200":
+          description: Proxy mode toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IpInfo"
+
+  /vulnerabilities:
+    get:
+      operationId: getVulnerabilities
+      tags: [vulnerabilities]
+      summary: List all vulnerability findings
+      responses:
+        "200":
+          description: Vulnerability list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vulnerability"
+
+  /vulnerabilities/{id}:
+    get:
+      operationId: getVulnerability
+      tags: [vulnerabilities]
+      summary: Get vulnerability detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vulnerability detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vulnerability"
+
+  /vulnerabilities/stats:
+    get:
+      operationId: getVulnerabilityStats
+      tags: [vulnerabilities]
+      summary: Get vulnerability severity breakdown
+      responses:
+        "200":
+          description: Stats by severity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VulnerabilityStats"
+
+  /reports:
+    get:
+      operationId: getReports
+      tags: [reports]
+      summary: List generated reports
+      responses:
+        "200":
+          description: Reports list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+    post:
+      operationId: generateReport
+      tags: [reports]
+      summary: Generate a PDF report for a scan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportInput"
+      responses:
+        "201":
+          description: Report generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +429,288 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    LoginInput:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    User:
+      type: object
+      required: [id, username, role, tier]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        role:
+          type: string
+          enum: [admin, operator, viewer]
+        tier:
+          type: string
+          enum: [Node_01, Node_X, Hyper_Core]
+        createdAt:
+          type: string
+
+    DashboardStats:
+      type: object
+      required: [totalScans, activeScans, totalVulns, criticalCount, highCount, mediumCount, lowCount, proxyPoolSize, toolsActive, threadsRunning]
+      properties:
+        totalScans:
+          type: integer
+        activeScans:
+          type: integer
+        totalVulns:
+          type: integer
+        criticalCount:
+          type: integer
+        highCount:
+          type: integer
+        mediumCount:
+          type: integer
+        lowCount:
+          type: integer
+        proxyPoolSize:
+          type: integer
+        toolsActive:
+          type: integer
+        threadsRunning:
+          type: integer
+
+    Scan:
+      type: object
+      required: [id, target, status, tools, createdAt]
+      properties:
+        id:
+          type: integer
+        target:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed, failed, stopped]
+        tools:
+          type: array
+          items:
+            type: string
+        progress:
+          type: ["integer", "null"]
+        startedAt:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        vulnCount:
+          type: ["integer", "null"]
+
+    ScanInput:
+      type: object
+      required: [target, tools]
+      properties:
+        target:
+          type: string
+        tools:
+          type: array
+          items:
+            type: string
+        useProxy:
+          type: boolean
+
+    LogLine:
+      type: object
+      required: [id, scanId, message, level, timestamp]
+      properties:
+        id:
+          type: integer
+        scanId:
+          type: integer
+        message:
+          type: string
+        level:
+          type: string
+          enum: [info, warn, error, success]
+        timestamp:
+          type: string
+
+    Tool:
+      type: object
+      required: [id, name, status, version]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        githubUrl:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, inactive, updating, error]
+        version:
+          type: ["string", "null"]
+        lastChecked:
+          type: ["string", "null"]
+        healthScore:
+          type: ["integer", "null"]
+
+    ToolInput:
+      type: object
+      required: [name, githubUrl]
+      properties:
+        name:
+          type: string
+        githubUrl:
+          type: string
+        description:
+          type: string
+
+    Proxy:
+      type: object
+      required: [id, ip, port, protocol, status]
+      properties:
+        id:
+          type: integer
+        ip:
+          type: string
+        port:
+          type: integer
+        protocol:
+          type: string
+          enum: [http, https, socks5]
+        status:
+          type: string
+          enum: [active, inactive, testing]
+        latency:
+          type: ["integer", "null"]
+        country:
+          type: ["string", "null"]
+        isp:
+          type: ["string", "null"]
+        healthScore:
+          type: ["integer", "null"]
+
+    ProxyInput:
+      type: object
+      required: [ip, port, protocol]
+      properties:
+        ip:
+          type: string
+        port:
+          type: integer
+        protocol:
+          type: string
+          enum: [http, https, socks5]
+        username:
+          type: string
+        password:
+          type: string
+
+    ProxyToggle:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+
+    IpInfo:
+      type: object
+      required: [ip, country, isp, proxyEnabled]
+      properties:
+        ip:
+          type: string
+        country:
+          type: string
+        isp:
+          type: string
+        city:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lon:
+          type: ["number", "null"]
+        proxyEnabled:
+          type: boolean
+
+    Vulnerability:
+      type: object
+      required: [id, scanId, title, severity, url, status]
+      properties:
+        id:
+          type: integer
+        scanId:
+          type: integer
+        title:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low, info]
+        url:
+          type: string
+        status:
+          type: string
+          enum: [confirmed, false_positive, pending]
+        description:
+          type: ["string", "null"]
+        evidence:
+          type: ["string", "null"]
+        fix:
+          type: ["string", "null"]
+        aiValidated:
+          type: boolean
+        discoveredAt:
+          type: string
+
+    VulnerabilityStats:
+      type: object
+      required: [critical, high, medium, low, info, total]
+      properties:
+        critical:
+          type: integer
+        high:
+          type: integer
+        medium:
+          type: integer
+        low:
+          type: integer
+        info:
+          type: integer
+        total:
+          type: integer
+
+    Report:
+      type: object
+      required: [id, scanId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        scanId:
+          type: integer
+        status:
+          type: string
+          enum: [generating, ready, failed]
+        downloadUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ReportInput:
+      type: object
+      required: [scanId]
+      properties:
+        scanId:
+          type: integer
