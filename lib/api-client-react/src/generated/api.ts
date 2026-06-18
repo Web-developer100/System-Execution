@@ -35,6 +35,7 @@ import type {
   ScanInput,
   Tool,
   ToolInput,
+  ToolchainStatus,
   User,
   Vulnerability,
   VulnerabilityStats
@@ -1014,6 +1015,83 @@ export const useInstallTool = <TError = ErrorType<unknown>,
       return useMutation(getInstallToolMutationOptions(options));
     }
 
+export const getGetToolUrl = (id: number,) => {
+
+
+
+
+  return `/api/tools/${id}`
+}
+
+/**
+ * @summary Get a tool detail record
+ */
+export const getTool = async (id: number, options?: RequestInit): Promise<Tool> => {
+
+  return customFetch<Tool>(getGetToolUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetToolQueryKey = (id: number,) => {
+    return [
+    `/api/tools/${id}`
+    ] as const;
+    }
+
+
+export const getGetToolQueryOptions = <TData = Awaited<ReturnType<typeof getTool>>, TError = ErrorType<unknown>>(id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTool>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetToolQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTool>>> = ({ signal }) => getTool(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(id), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTool>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetToolQueryResult = NonNullable<Awaited<ReturnType<typeof getTool>>>
+export type GetToolQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get a tool detail record
+ */
+
+export function useGetTool<TData = Awaited<ReturnType<typeof getTool>>, TError = ErrorType<unknown>>(
+ id: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTool>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetToolQueryOptions(id,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getDeleteToolUrl = (id: number,) => {
 
 
@@ -1153,6 +1231,83 @@ export const useUpdateTool = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getUpdateToolMutationOptions(options));
     }
+
+export const getGetToolchainStatusUrl = () => {
+
+
+
+
+  return `/api/system/toolchain`
+}
+
+/**
+ * @summary Check local server toolchain dependencies
+ */
+export const getToolchainStatus = async ( options?: RequestInit): Promise<ToolchainStatus> => {
+
+  return customFetch<ToolchainStatus>(getGetToolchainStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetToolchainStatusQueryKey = () => {
+    return [
+    `/api/system/toolchain`
+    ] as const;
+    }
+
+
+export const getGetToolchainStatusQueryOptions = <TData = Awaited<ReturnType<typeof getToolchainStatus>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getToolchainStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetToolchainStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getToolchainStatus>>> = ({ signal }) => getToolchainStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getToolchainStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetToolchainStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getToolchainStatus>>>
+export type GetToolchainStatusQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Check local server toolchain dependencies
+ */
+
+export function useGetToolchainStatus<TData = Awaited<ReturnType<typeof getToolchainStatus>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getToolchainStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetToolchainStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetProxiesUrl = () => {
 

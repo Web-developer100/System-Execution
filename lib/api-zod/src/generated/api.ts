@@ -165,8 +165,19 @@ export const GetToolsResponseItem = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "githubUrl": zod.string().nullish(),
-  "status": zod.enum(['active', 'inactive', 'updating', 'error']),
+  "status": zod.enum(['active', 'inactive', 'installing', 'updating', 'error']),
   "version": zod.string().nullable(),
+  "language": zod.string().nullish(),
+  "localPath": zod.string().nullish(),
+  "defaultBranch": zod.string().nullish(),
+  "installedCommit": zod.string().nullish(),
+  "latestCommit": zod.string().nullish(),
+  "repoCreatedAt": zod.string().nullish(),
+  "repoUpdatedAt": zod.string().nullish(),
+  "installLog": zod.string().nullish(),
+  "installStartedAt": zod.string().nullish(),
+  "installCompletedAt": zod.string().nullish(),
+  "lastUpdateMessage": zod.string().nullish(),
   "lastChecked": zod.string().nullish(),
   "healthScore": zod.number().nullish()
 })
@@ -180,6 +191,36 @@ export const InstallToolBody = zod.object({
   "name": zod.string(),
   "githubUrl": zod.string(),
   "description": zod.string().optional()
+})
+
+
+/**
+ * @summary Get a tool detail record
+ */
+export const GetToolParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetToolResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "githubUrl": zod.string().nullish(),
+  "status": zod.enum(['active', 'inactive', 'installing', 'updating', 'error']),
+  "version": zod.string().nullable(),
+  "language": zod.string().nullish(),
+  "localPath": zod.string().nullish(),
+  "defaultBranch": zod.string().nullish(),
+  "installedCommit": zod.string().nullish(),
+  "latestCommit": zod.string().nullish(),
+  "repoCreatedAt": zod.string().nullish(),
+  "repoUpdatedAt": zod.string().nullish(),
+  "installLog": zod.string().nullish(),
+  "installStartedAt": zod.string().nullish(),
+  "installCompletedAt": zod.string().nullish(),
+  "lastUpdateMessage": zod.string().nullish(),
+  "lastChecked": zod.string().nullish(),
+  "healthScore": zod.number().nullish()
 })
 
 
@@ -203,10 +244,35 @@ export const UpdateToolResponse = zod.object({
   "name": zod.string(),
   "description": zod.string().nullish(),
   "githubUrl": zod.string().nullish(),
-  "status": zod.enum(['active', 'inactive', 'updating', 'error']),
+  "status": zod.enum(['active', 'inactive', 'installing', 'updating', 'error']),
   "version": zod.string().nullable(),
+  "language": zod.string().nullish(),
+  "localPath": zod.string().nullish(),
+  "defaultBranch": zod.string().nullish(),
+  "installedCommit": zod.string().nullish(),
+  "latestCommit": zod.string().nullish(),
+  "repoCreatedAt": zod.string().nullish(),
+  "repoUpdatedAt": zod.string().nullish(),
+  "installLog": zod.string().nullish(),
+  "installStartedAt": zod.string().nullish(),
+  "installCompletedAt": zod.string().nullish(),
+  "lastUpdateMessage": zod.string().nullish(),
   "lastChecked": zod.string().nullish(),
   "healthScore": zod.number().nullish()
+})
+
+
+/**
+ * @summary Check local server toolchain dependencies
+ */
+export const GetToolchainStatusResponse = zod.object({
+  "status": zod.enum(['ready', 'missing_dependencies']),
+  "tools": zod.array(zod.object({
+  "name": zod.string(),
+  "available": zod.boolean(),
+  "version": zod.string().nullish()
+})),
+  "bootstrapScript": zod.string()
 })
 
 

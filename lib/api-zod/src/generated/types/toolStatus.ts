@@ -12,6 +12,7 @@ export type ToolStatus = typeof ToolStatus[keyof typeof ToolStatus];
 export const ToolStatus = {
   active: 'active',
   inactive: 'inactive',
+  installing: 'installing',
   updating: 'updating',
   error: 'error',
 } as const;

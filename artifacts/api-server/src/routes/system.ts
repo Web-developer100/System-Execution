@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { spawn } from "node:child_process";
 
 const router: IRouter = Router();
 
@@ -28,6 +29,51 @@ router.get("/system/metrics", (_req, res) => {
     platform: process.platform,
     requestCount,
     bootTime,
+  });
+});
+
+function checkBinary(binary: string, args = ["--version"]): Promise<{ name: string; available: boolean; version: string | null }> {
+  return new Promise((resolve) => {
+    const child = spawn(binary, args, { shell: false, windowsHide: true });
+    let output = "";
+
+    child.stdout?.on("data", (chunk: Buffer) => {
+      output += chunk.toString();
+    });
+    child.stderr?.on("data", (chunk: Buffer) => {
+      output += chunk.toString();
+    });
+    child.on("error", () => {
+      resolve({ name: binary, available: false, version: null });
+    });
+    child.on("close", (code) => {
+      resolve({
+        name: binary,
+        available: code === 0,
+        version: code === 0 ? output.split(/\r?\n/)[0]?.trim() || null : null,
+      });
+    });
+  });
+}
+
+// GET /api/system/toolchain
+router.get("/system/toolchain", async (_req, res) => {
+  const checks = await Promise.all([
+    checkBinary("git"),
+    checkBinary("python", ["--version"]),
+    checkBinary("pip", ["--version"]),
+    checkBinary("go", ["version"]),
+    checkBinary("rustc", ["--version"]),
+    checkBinary("cargo", ["--version"]),
+    checkBinary("node", ["--version"]),
+    checkBinary("npm", ["--version"]),
+    checkBinary("docker", ["--version"]),
+  ]);
+
+  return res.json({
+    status: checks.every((check) => check.available) ? "ready" : "missing_dependencies",
+    tools: checks,
+    bootstrapScript: "scripts/bootstrap-toolchain-linux.sh",
   });
 });
 

@@ -115,6 +115,7 @@ export type ToolStatus = typeof ToolStatus[keyof typeof ToolStatus];
 export const ToolStatus = {
   active: 'active',
   inactive: 'inactive',
+  installing: 'installing',
   updating: 'updating',
   error: 'error',
 } as const;
@@ -129,6 +130,28 @@ export interface Tool {
   status: ToolStatus;
   /** @nullable */
   version: string | null;
+  /** @nullable */
+  language?: string | null;
+  /** @nullable */
+  localPath?: string | null;
+  /** @nullable */
+  defaultBranch?: string | null;
+  /** @nullable */
+  installedCommit?: string | null;
+  /** @nullable */
+  latestCommit?: string | null;
+  /** @nullable */
+  repoCreatedAt?: string | null;
+  /** @nullable */
+  repoUpdatedAt?: string | null;
+  /** @nullable */
+  installLog?: string | null;
+  /** @nullable */
+  installStartedAt?: string | null;
+  /** @nullable */
+  installCompletedAt?: string | null;
+  /** @nullable */
+  lastUpdateMessage?: string | null;
   /** @nullable */
   lastChecked?: string | null;
   /** @nullable */
@@ -207,6 +230,27 @@ export interface IpInfo {
   /** @nullable */
   lon?: number | null;
   proxyEnabled: boolean;
+}
+
+export interface ToolchainBinary {
+  name: string;
+  available: boolean;
+  /** @nullable */
+  version?: string | null;
+}
+
+export type ToolchainStatusStatus = typeof ToolchainStatusStatus[keyof typeof ToolchainStatusStatus];
+
+
+export const ToolchainStatusStatus = {
+  ready: 'ready',
+  missing_dependencies: 'missing_dependencies',
+} as const;
+
+export interface ToolchainStatus {
+  status: ToolchainStatusStatus;
+  tools: ToolchainBinary[];
+  bootstrapScript: string;
 }
 
 export type VulnerabilitySeverity = typeof VulnerabilitySeverity[keyof typeof VulnerabilitySeverity];

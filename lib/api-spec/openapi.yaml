@@ -231,6 +231,23 @@ paths:
                 $ref: "#/components/schemas/Tool"
 
   /tools/{id}:
+    get:
+      operationId: getTool
+      tags: [tools]
+      summary: Get a tool detail record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Tool details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tool"
     delete:
       operationId: deleteTool
       tags: [tools]
@@ -263,6 +280,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Tool"
+
+  /system/toolchain:
+    get:
+      operationId: getToolchainStatus
+      tags: [stats]
+      summary: Check local server toolchain dependencies
+      responses:
+        "200":
+          description: Toolchain status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToolchainStatus"
 
   /proxies:
     get:
@@ -560,8 +590,30 @@ components:
           type: ["string", "null"]
         status:
           type: string
-          enum: [active, inactive, updating, error]
+          enum: [active, inactive, installing, updating, error]
         version:
+          type: ["string", "null"]
+        language:
+          type: ["string", "null"]
+        localPath:
+          type: ["string", "null"]
+        defaultBranch:
+          type: ["string", "null"]
+        installedCommit:
+          type: ["string", "null"]
+        latestCommit:
+          type: ["string", "null"]
+        repoCreatedAt:
+          type: ["string", "null"]
+        repoUpdatedAt:
+          type: ["string", "null"]
+        installLog:
+          type: ["string", "null"]
+        installStartedAt:
+          type: ["string", "null"]
+        installCompletedAt:
+          type: ["string", "null"]
+        lastUpdateMessage:
           type: ["string", "null"]
         lastChecked:
           type: ["string", "null"]
@@ -645,6 +697,31 @@ components:
           type: ["number", "null"]
         proxyEnabled:
           type: boolean
+
+    ToolchainBinary:
+      type: object
+      required: [name, available]
+      properties:
+        name:
+          type: string
+        available:
+          type: boolean
+        version:
+          type: ["string", "null"]
+
+    ToolchainStatus:
+      type: object
+      required: [status, tools, bootstrapScript]
+      properties:
+        status:
+          type: string
+          enum: [ready, missing_dependencies]
+        tools:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolchainBinary"
+        bootstrapScript:
+          type: string
 
     Vulnerability:
       type: object

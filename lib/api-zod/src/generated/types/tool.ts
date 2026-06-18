@@ -18,6 +18,28 @@ export interface Tool {
   /** @nullable */
   version: string | null;
   /** @nullable */
+  language?: string | null;
+  /** @nullable */
+  localPath?: string | null;
+  /** @nullable */
+  defaultBranch?: string | null;
+  /** @nullable */
+  installedCommit?: string | null;
+  /** @nullable */
+  latestCommit?: string | null;
+  /** @nullable */
+  repoCreatedAt?: string | null;
+  /** @nullable */
+  repoUpdatedAt?: string | null;
+  /** @nullable */
+  installLog?: string | null;
+  /** @nullable */
+  installStartedAt?: string | null;
+  /** @nullable */
+  installCompletedAt?: string | null;
+  /** @nullable */
+  lastUpdateMessage?: string | null;
+  /** @nullable */
   lastChecked?: string | null;
   /** @nullable */
   healthScore?: number | null;
