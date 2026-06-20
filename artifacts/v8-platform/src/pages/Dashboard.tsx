@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useGetDashboardStats, useGetVulnerabilityStats, getGetDashboardStatsQueryKey } from "@workspace/api-client-react";
+import { authFetch } from "@/lib/auth-fetch";
 import { useI18n } from "@/lib/i18n";
 import { useScanWs } from "@/hooks/use-scan-ws";
 import { useEffect, useRef, useState } from "react";
@@ -231,7 +232,7 @@ export default function Dashboard() {
   const { data: sysMetrics } = useQuery<SystemMetrics>({
     queryKey: ["systemMetrics"],
     queryFn: async () => {
-      const res = await fetch("/api/system/metrics");
+      const res = await authFetch("/api/system/metrics");
       if (!res.ok) throw new Error("metrics fetch failed");
       return res.json();
     },

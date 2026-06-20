@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useI18n } from "@/lib/i18n";import { BookOpen, Shield, Search, Filter, ChevronDown, ChevronUp,
+import { useI18n } from "@/lib/i18n";
+import { authFetch } from "@/lib/auth-fetch";import { BookOpen, Shield, Search, Filter, ChevronDown, ChevronUp,
   RefreshCw, AlertTriangle, CheckCircle, XCircle, Clock,
   User, ArrowUpDown,
 } from "lucide-react";
@@ -105,7 +106,7 @@ export default function AuditLogs() {
   const { data: auditData, isLoading, refetch } = useQuery<AuditLogResponse>({
     queryKey: ["auditLogs", page, limit, search, methodFilter, statusFilter],
     queryFn: async () => {
-      const res = await fetch(`/api/audit?${params.toString()}`);
+      const res = await authFetch(`/api/audit?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch audit logs");
       return res.json();
     },
@@ -116,7 +117,7 @@ export default function AuditLogs() {
   const { data: stats } = useQuery<AuditStats>({
     queryKey: ["auditStats"],
     queryFn: async () => {
-      const res = await fetch("/api/audit/stats");
+      const res = await authFetch("/api/audit/stats");
       if (!res.ok) throw new Error("Failed to fetch audit stats");
       return res.json();
     },

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useCallback } from "react";
+import { authFetch } from "@/lib/auth-fetch";
 import {
   Activity, Heart, AlertTriangle, Bell, TrendingUp,
   CheckCircle, XCircle,
@@ -187,7 +188,7 @@ function MetricsChart() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const res = await fetch("/api/observability/metrics/json");
+        const res = await authFetch("/api/observability/metrics/json");
         if (!res.ok) return;
         const data: Record<string, number> = await res.json();
         const cpu = data["v8_cpu_usage_percent"] ?? Math.random() * 40 + 20;
@@ -312,7 +313,7 @@ function AlertsSection() {
   const { data: firings, isLoading } = useQuery<AlertFiring[]>({
     queryKey: ["observability", "alerts", "firings"],
     queryFn: async () => {
-      const res = await fetch("/api/observability/alerts/firings");
+      const res = await authFetch("/api/observability/alerts/firings");
       if (!res.ok) throw new Error("Failed to fetch alerts");
       return res.json();
     },
@@ -321,7 +322,7 @@ function AlertsSection() {
 
   const acknowledgeMut = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/observability/alerts/firings/${id}/acknowledge`, {
+      const res = await authFetch(`/api/observability/alerts/firings/${id}/acknowledge`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: "dashboard" }),
@@ -337,7 +338,7 @@ function AlertsSection() {
 
   const silenceMut = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/observability/alerts/firings/${id}/silence`, {
+      const res = await authFetch(`/api/observability/alerts/firings/${id}/silence`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ durationMs: 3600_000 }),
@@ -353,7 +354,7 @@ function AlertsSection() {
 
   const resolveMut = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/observability/alerts/firings/${id}/resolve`, {
+      const res = await authFetch(`/api/observability/alerts/firings/${id}/resolve`, {
         method: "POST",
       });
       if (!res.ok) throw new Error("Failed to resolve");
@@ -480,7 +481,7 @@ function AnomaliesSection() {
   const { data, isLoading } = useQuery<{ count: number; anomalies: AnomalyMetric[] }>({
     queryKey: ["observability", "anomalies"],
     queryFn: async () => {
-      const res = await fetch("/api/observability/anomalies");
+      const res = await authFetch("/api/observability/anomalies");
       if (!res.ok) throw new Error("Failed to fetch anomalies");
       return res.json();
     },
@@ -490,7 +491,7 @@ function AnomaliesSection() {
   const { data: status } = useQuery({
     queryKey: ["observability", "anomalies", "status"],
     queryFn: async () => {
-      const res = await fetch("/api/observability/anomalies/status");
+      const res = await authFetch("/api/observability/anomalies/status");
       if (!res.ok) throw new Error("Failed to fetch anomaly status");
       return res.json();
     },
@@ -548,7 +549,7 @@ function CapacitySection() {
   const { data, isLoading } = useQuery<{ count: number; forecasts: CapacityForecast[] }>({
     queryKey: ["observability", "capacity"],
     queryFn: async () => {
-      const res = await fetch("/api/observability/capacity");
+      const res = await authFetch("/api/observability/capacity");
       if (!res.ok) throw new Error("Failed to fetch capacity");
       return res.json();
     },
@@ -637,7 +638,7 @@ function EventsMiniSection() {
   const { data, isLoading } = useQuery<{ bufferSize: number; eventCounts: Record<string, number> }>({
     queryKey: ["observability", "events", "stats"],
     queryFn: async () => {
-      const res = await fetch("/api/observability/events/stats");
+      const res = await authFetch("/api/observability/events/stats");
       if (!res.ok) throw new Error("Failed to fetch events");
       return res.json();
     },
@@ -683,7 +684,7 @@ export default function ObservabilityDashboard() {
   const { data: dashboard, isLoading: dashboardLoading } = useQuery<DashboardData>({
     queryKey: ["observability", "dashboard"],
     queryFn: async () => {
-      const res = await fetch("/api/observability/dashboard");
+      const res = await authFetch("/api/observability/dashboard");
       if (!res.ok) throw new Error("Failed to fetch dashboard");
       return res.json();
     },
@@ -693,7 +694,7 @@ export default function ObservabilityDashboard() {
   const { data: healthData } = useQuery<HealthReport>({
     queryKey: ["observability", "health"],
     queryFn: async () => {
-      const res = await fetch("/api/observability/health");
+      const res = await authFetch("/api/observability/health");
       if (!res.ok) throw new Error("Failed to fetch health");
       return res.json();
     },
@@ -703,7 +704,7 @@ export default function ObservabilityDashboard() {
   const { data: rulesCount } = useQuery({
     queryKey: ["observability", "alerts", "rules"],
     queryFn: async () => {
-      const res = await fetch("/api/observability/alerts/rules");
+      const res = await authFetch("/api/observability/alerts/rules");
       if (!res.ok) throw new Error("Failed to fetch rules");
       const data = await res.json();
       return data.length as number;
