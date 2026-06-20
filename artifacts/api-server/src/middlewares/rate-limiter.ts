@@ -27,7 +27,7 @@ const standardResponse = (_req: Request, res: Response) => {
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
+  max: 100, // dev: generous limit for development
   standardHeaders: true,
   legacyHeaders: false,
   message: undefined, // use handler below
