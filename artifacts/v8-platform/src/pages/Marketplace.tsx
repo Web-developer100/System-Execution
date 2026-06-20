@@ -1,25 +1,25 @@
 import { useState } from "react";
-import { useI18n } from "@/lib/i18n";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { authFetch } from "@/lib/auth-fetch";
 import {
   Zap, Search, Star, Download, ExternalLink, Check,
-  X, ChevronRight, Cpu, Shield, Globe, Wrench,
-  AlertTriangle, FileText, Code, type LucideIcon,
+  ChevronRight, Shield, Globe, Wrench,
+  AlertTriangle, Code, RefreshCw, type LucideIcon,
 } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
-interface Plugin {
+interface ApiPlugin {
   id: string;
   name: string;
   description: string;
+  shortDescription?: string;
   category: string;
-  icon: LucideIcon;
   version: string;
   author: string;
   rating: number;
@@ -30,18 +30,14 @@ interface Plugin {
   docs: string;
 }
 
-const MARKETPLACE_PLUGINS: Plugin[] = [
-  { id: "nuclei", name: "Nuclei", description: "Fast vulnerability scanner with YAML-based templates. 14,823+ CVE templates.", category: "Scanner", icon: Shield, version: "3.3.2", author: "ProjectDiscovery", rating: 4.9, downloads: 12450, installed: true, healthScore: 98, tags: ["cve", "templates", "fast"], docs: "https://nuclei.projectdiscovery.io" },
-  { id: "subfinder", name: "Subfinder", description: "Passive subdomain enumeration using 40+ sources. DNS, certificates, search engines.", category: "Recon", icon: Globe, version: "2.6.6", author: "ProjectDiscovery", rating: 4.8, downloads: 9800, installed: true, healthScore: 95, tags: ["subdomain", "dns", "passive"], docs: "https://github.com/projectdiscovery/subfinder" },
-  { id: "naabu", name: "Naabu", description: "Fast port scanner with SYN and connect scanning. 100k ports/second.", category: "Recon", icon: Globe, version: "2.3.1", author: "ProjectDiscovery", rating: 4.7, downloads: 7600, installed: true, healthScore: 92, tags: ["ports", "scan", "fast"], docs: "https://github.com/projectdiscovery/naabu" },
-  { id: "httpx", name: "HTTPX", description: "HTTP probing toolkit with TLS, fingerprinting, and screenshot capture.", category: "Utility", icon: Wrench, version: "1.6.0", author: "ProjectDiscovery", rating: 4.6, downloads: 8200, installed: true, healthScore: 90, tags: ["http", "probe", "fingerprint"], docs: "https://github.com/projectdiscovery/httpx" },
-  { id: "ffuf", name: "FFUF", description: "Fast web fuzzer for directory discovery, parameter brute-force, and Vhost discovery.", category: "Fuzzer", icon: Zap, version: "2.1.0", author: "ffuf/ffuf", rating: 4.9, downloads: 15000, installed: false, healthScore: 96, tags: ["fuzz", "directory", "bruteforce"], docs: "https://github.com/ffuf/ffuf" },
-  { id: "dalfox", name: "Dalfox", description: "Parameter analysis and XSS scanner with 30+ payload types and WAF detection.", category: "Scanner", icon: AlertTriangle, version: "2.9.3", author: "hahwul", rating: 4.5, downloads: 5400, installed: false, healthScore: 88, tags: ["xss", "parameter", "waf"], docs: "https://github.com/hahwul/dalfox" },
-  { id: "gospider", name: "Gospider", description: "Fast web spider with JS parsing, form extraction, and link discovery.", category: "Crawler", icon: Code, version: "1.2.0", author: "jaeles-project", rating: 4.3, downloads: 4100, installed: false, healthScore: 85, tags: ["spider", "crawl", "js"], docs: "https://github.com/jaeles-project/gospider" },
-  { id: "katana", name: "Katana", description: "Next-gen crawling and spidering framework with headless browser support.", category: "Crawler", icon: Code, version: "1.1.0", author: "ProjectDiscovery", rating: 4.7, downloads: 6300, installed: false, healthScore: 91, tags: ["crawl", "headless", "spider"], docs: "https://github.com/projectdiscovery/katana" },
-  { id: "sqlmap", name: "SQLMap", description: "Automatic SQL injection detection and exploitation tool. Supports all major DBMS.", category: "Exploit", icon: AlertTriangle, version: "1.8.2", author: "sqlmapproject", rating: 4.9, downloads: 22000, installed: false, healthScore: 97, tags: ["sqli", "database", "exploit"], docs: "https://sqlmap.org" },
-  { id: "trivy", name: "Trivy", description: "Comprehensive vulnerability scanner for containers, Kubernetes, and dependencies.", category: "Scanner", icon: Shield, version: "0.52.0", author: "Aqua Security", rating: 4.8, downloads: 18500, installed: false, healthScore: 94, tags: ["container", "sca", "dependency"], docs: "https://trivy.dev" },
-];
+const ICON_MAP: Record<string, LucideIcon> = {
+  Scanner: Shield,
+  Recon: Globe,
+  Utility: Wrench,
+  Fuzzer: Zap,
+  Exploit: AlertTriangle,
+  Crawler: Code,
+};
 
 const CATEGORIES = ["All", "Scanner", "Recon", "Crawler", "Fuzzer", "Exploit", "Utility"];
 
@@ -56,8 +52,13 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function PluginDetail({ plugin, onClose }: { plugin: Plugin; onClose: () => void }) {
-  const Icon = plugin.icon;
+function PluginDetail({ plugin, onClose, onInstall, installing }: {
+  plugin: ApiPlugin;
+  onClose: () => void;
+  onInstall: (id: string) => void;
+  installing: boolean;
+}) {
+  const Icon = ICON_MAP[plugin.category] ?? Shield;
   return (
     <Dialog open onOpenChange={open => !open && onClose()}>
       <DialogContent className="bg-background border-border/50 max-w-2xl max-h-[80vh] overflow-y-auto rounded-xl">
@@ -80,36 +81,45 @@ function PluginDetail({ plugin, onClose }: { plugin: Plugin; onClose: () => void
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          {/* Tags */}
           <div className="flex flex-wrap gap-1.5">
             {plugin.tags.map(tag => (
               <Badge key={tag} variant="secondary" className="rounded-md text-[10px] font-mono">{tag}</Badge>
             ))}
           </div>
 
-          {/* Actions */}
           <div className="flex gap-2">
-            <Button className="flex-1 bg-primary text-primary-foreground">
-              {plugin.installed ? <><Check className="w-4 h-4 mr-1.5" /> Installed</> : <><Download className="w-4 h-4 mr-1.5" /> Install</>}
+            <Button
+              className={`flex-1 ${plugin.installed ? "bg-success/10 text-success border border-success/30 hover:bg-success/20" : "bg-primary text-primary-foreground"}`}
+              onClick={() => onInstall(plugin.id)}
+              disabled={installing}
+            >
+              {installing ? (
+                <><RefreshCw className="w-4 h-4 mr-1.5 animate-spin" /> Processing...</>
+              ) : plugin.installed ? (
+                <><Check className="w-4 h-4 mr-1.5" /> Installed</>
+              ) : (
+                <><Download className="w-4 h-4 mr-1.5" /> Install</>
+              )}
             </Button>
-            <Button variant="outline" className="gap-2">
-              <ExternalLink className="w-4 h-4" /> Docs
+            <Button variant="outline" className="gap-2" asChild>
+              <a href={plugin.docs} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-4 h-4" /> Docs
+              </a>
             </Button>
           </div>
 
-          {/* Info Grid */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 rounded-lg border border-border/50 bg-muted/20">
               <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Author</div>
               <div className="text-sm font-medium mt-0.5">{plugin.author}</div>
             </div>
             <div className="p-3 rounded-lg border border-border/50 bg-muted/20">
-              <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Health</div>
+              <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Health Score</div>
               <div className="flex items-center gap-2 mt-0.5">
                 <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-success rounded-full" style={{ width: `${plugin.healthScore}%` }} />
+                  <div className="h-full bg-green-500 rounded-full" style={{ width: `${plugin.healthScore}%` }} />
                 </div>
-                <span className="text-sm font-mono text-success">{plugin.healthScore}%</span>
+                <span className="text-sm font-mono text-green-500">{plugin.healthScore}%</span>
               </div>
             </div>
           </div>
@@ -122,10 +132,46 @@ function PluginDetail({ plugin, onClose }: { plugin: Plugin; onClose: () => void
 export default function Marketplace() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
-  const [selectedPlugin, setSelectedPlugin] = useState<Plugin | null>(null);
-  const [installed, setInstalled] = useState<Set<string>>(new Set(MARKETPLACE_PLUGINS.filter(p => p.installed).map(p => p.id)));
+  const [selectedPlugin, setSelectedPlugin] = useState<ApiPlugin | null>(null);
+  const [installingId, setInstallingId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  const filtered = MARKETPLACE_PLUGINS.filter(p => {
+  const { data: pluginData, isLoading } = useQuery<{ plugins: ApiPlugin[] }>({
+    queryKey: ["marketplace"],
+    queryFn: async () => {
+      const res = await authFetch("/api/marketplace");
+      if (!res.ok) throw new Error("Failed to load marketplace");
+      return res.json();
+    },
+    staleTime: 30_000,
+  });
+
+  const installMut = useMutation({
+    mutationFn: async ({ id, action }: { id: string; action: "install" | "uninstall" }) => {
+      const url = action === "install"
+        ? `/api/marketplace/${id}/install`
+        : `/api/plugins/${encodeURIComponent(id)}`;
+      const res = await authFetch(url, { method: action === "install" ? "POST" : "DELETE" });
+      if (!res.ok) throw new Error(`Failed to ${action} plugin`);
+      return res.json();
+    },
+    onSuccess: (_data, { id, action }) => {
+      queryClient.invalidateQueries({ queryKey: ["marketplace"] });
+      toast({
+        title: action === "install" ? "Plugin Installed" : "Plugin Removed",
+        description: `Successfully ${action}ed plugin ${id}`,
+      });
+    },
+    onError: (_err, { id }) => {
+      toast({ title: "Action Failed", description: `Could not update plugin ${id}`, variant: "destructive" });
+    },
+    onSettled: () => setInstallingId(null),
+  });
+
+  const plugins = pluginData?.plugins ?? [];
+
+  const filtered = plugins.filter(p => {
     if (categoryFilter !== "All" && p.category !== categoryFilter) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -135,12 +181,10 @@ export default function Marketplace() {
   });
 
   const handleInstall = (pluginId: string) => {
-    setInstalled(prev => {
-      const next = new Set(prev);
-      if (next.has(pluginId)) next.delete(pluginId);
-      else next.add(pluginId);
-      return next;
-    });
+    const plugin = plugins.find(p => p.id === pluginId);
+    if (!plugin) return;
+    setInstallingId(pluginId);
+    installMut.mutate({ id: pluginId, action: plugin.installed ? "uninstall" : "install" });
   };
 
   return (
@@ -150,10 +194,11 @@ export default function Marketplace() {
           <Zap className="w-6 h-6 text-primary" />
           Plugin Marketplace
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Discover, install, and manage security tools</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {isLoading ? "Loading plugins..." : `${plugins.length} plugins available — ${plugins.filter(p => p.installed).length} installed`}
+        </p>
       </div>
 
-      {/* Search + Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -162,7 +207,6 @@ export default function Marketplace() {
         </div>
       </div>
 
-      {/* Category Pills */}
       <div className="flex flex-wrap gap-2">
         {CATEGORIES.map(cat => (
           <button key={cat} onClick={() => setCategoryFilter(cat)}
@@ -174,55 +218,90 @@ export default function Marketplace() {
         ))}
       </div>
 
-      {/* Plugin Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map(plugin => {
-          const Icon = plugin.icon;
-          const isInstalled = installed.has(plugin.id);
-          return (
-            <Card key={plugin.id}
-              className="glass-card hover:border-primary/30 transition-all cursor-pointer group"
-              onClick={() => setSelectedPlugin(plugin)}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/5 border border-border/50 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
-                    <Icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold truncate">{plugin.name}</h3>
-                      <Badge variant="outline" className="rounded-sm text-[9px] font-mono shrink-0">{plugin.version}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{plugin.description}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <StarRating rating={plugin.rating} />
-                  <Badge variant="outline" className="rounded-md text-[10px]">{plugin.category}</Badge>
-                </div>
-
-                <div className="flex items-center gap-2 mt-3">
-                  <Button size="sm"
-                    className={`flex-1 h-8 text-xs ${
-                      isInstalled ? "bg-success/10 text-success border border-success/30 hover:bg-success/20" : "bg-primary text-primary-foreground hover:bg-primary/90"
-                    }`}
-                    onClick={e => { e.stopPropagation(); handleInstall(plugin.id); }}>
-                    {isInstalled ? <><Check className="w-3 h-3 mr-1" /> Installed</> : <><Download className="w-3 h-3 mr-1" /> Install</>}
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"
-                    onClick={e => { e.stopPropagation(); setSelectedPlugin(plugin); }}>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="glass-card">
+              <CardContent className="p-4 space-y-3">
+                <Skeleton className="h-10 w-10 rounded-xl" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-8 w-full" />
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(plugin => {
+            const Icon = ICON_MAP[plugin.category] ?? Shield;
+            const isInstalled = plugin.installed;
+            const isInstalling = installingId === plugin.id;
+            return (
+              <Card key={plugin.id}
+                className="glass-card hover:border-primary/30 transition-all cursor-pointer group"
+                onClick={() => setSelectedPlugin(plugin)}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/5 border border-border/50 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
+                      <Icon className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold truncate">{plugin.name}</h3>
+                        <Badge variant="outline" className="rounded-sm text-[9px] font-mono shrink-0">{plugin.version}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                        {plugin.shortDescription ?? plugin.description}
+                      </p>
+                    </div>
+                  </div>
 
-      {/* Detail Dialog */}
-      {selectedPlugin && <PluginDetail plugin={selectedPlugin} onClose={() => setSelectedPlugin(null)} />}
+                  <div className="flex items-center justify-between">
+                    <StarRating rating={plugin.rating} />
+                    <Badge variant="outline" className="rounded-md text-[10px]">{plugin.category}</Badge>
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-3">
+                    <Button size="sm"
+                      className={`flex-1 h-8 text-xs ${
+                        isInstalled ? "bg-green-500/10 text-green-500 border border-green-500/30 hover:bg-green-500/20" : "bg-primary text-primary-foreground hover:bg-primary/90"
+                      }`}
+                      disabled={isInstalling}
+                      onClick={e => { e.stopPropagation(); handleInstall(plugin.id); }}>
+                      {isInstalling ? (
+                        <><RefreshCw className="w-3 h-3 mr-1 animate-spin" /> Installing...</>
+                      ) : isInstalled ? (
+                        <><Check className="w-3 h-3 mr-1" /> Installed</>
+                      ) : (
+                        <><Download className="w-3 h-3 mr-1" /> Install</>
+                      )}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground"
+                      onClick={e => { e.stopPropagation(); setSelectedPlugin(plugin); }}>
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+          {filtered.length === 0 && !isLoading && (
+            <div className="col-span-3 text-center py-16 text-muted-foreground">
+              No plugins found matching your search.
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedPlugin && (
+        <PluginDetail
+          plugin={selectedPlugin}
+          onClose={() => setSelectedPlugin(null)}
+          onInstall={handleInstall}
+          installing={installingId === selectedPlugin.id}
+        />
+      )}
     </div>
   );
 }
