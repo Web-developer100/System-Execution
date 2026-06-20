@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "v8platform.fullname" . }}-api
+  labels:
+    app.kubernetes.io/component: api-server
+    {{- include "v8platform.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.apiServer.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: api-server
+      {{- include "v8platform.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.apiServer.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        app.kubernetes.io/component: api-server
+        {{- include "v8platform.selectorLabels" . | nindent 8 }}
+        {{- with .Values.apiServer.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "v8platform.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: api-server
+          image: "{{ .Values.apiServer.image.repository }}:{{ .Values.apiServer.image.tag }}"
+          imagePullPolicy: {{ .Values.apiServer.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.apiServer.service.port }}
+              name: http
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: {{ include "v8platform.fullname" . }}-secrets
+            - configMapRef:
+                name: {{ include "v8platform.fullname" . }}-config
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            {{- toYaml .Values.apiServer.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.apiServer.livenessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.apiServer.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.apiServer.livenessProbe.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.apiServer.readinessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.apiServer.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.apiServer.readinessProbe.periodSeconds }}
+          volumeMounts:
+            {{- if .Values.apiServer.persistence.enabled }}
+            - name: reports
+              mountPath: {{ .Values.apiServer.persistence.mountPath }}
+            {{- end }}
+      volumes:
+        {{- if .Values.apiServer.persistence.enabled }}
+        - name: reports
+          persistentVolumeClaim:
+            claimName: {{ include "v8platform.fullname" . }}-reports
+        {{- end }}
+      {{- with .Values.apiServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiServer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.apiServer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

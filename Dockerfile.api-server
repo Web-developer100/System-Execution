@@ -1,0 +1,93 @@
+# =============================================================================
+# V8 Neural Exploitation Platform — API Server
+# =============================================================================
+# Multi-stage production Dockerfile
+#
+# Stages:
+#   1. build — install deps + compile TypeScript
+#   2. production — minimal runtime image
+#
+# Usage:
+#   docker build -f Dockerfile.api-server -t v8platform/api-server .
+#   docker run -p 8080:8080 v8platform/api-server
+
+# ── Stage 1: Build ────────────────────────────────────────────────────────────
+FROM node:22-alpine AS build
+
+RUN apk add --no-cache tini
+
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copy workspace manifests
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml tsconfig.base.json tsconfig.json ./
+COPY artifacts/api-server/package.json ./artifacts/api-server/package.json
+COPY artifacts/api-server/tsconfig.json ./artifacts/api-server/tsconfig.json
+COPY lib/db/package.json ./lib/db/package.json
+COPY lib/db/tsconfig.json ./lib/db/tsconfig.json
+COPY lib/api-zod/package.json ./lib/api-zod/package.json
+COPY lib/api-zod/tsconfig.json ./lib/api-zod/tsconfig.json
+COPY lib/api-client-react/package.json ./lib/api-client-react/package.json
+COPY lib/api-client-react/tsconfig.json ./lib/api-client-react/tsconfig.json
+COPY lib/api-spec/package.json ./lib/api-spec/package.json
+
+# Install ALL dependencies (including devDependencies for build)
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build shared libraries first
+RUN pnpm --filter @workspace/db build && \
+    pnpm --filter @workspace/api-zod build && \
+    pnpm --filter @workspace/api-client-react build
+
+# Build the API server
+RUN pnpm --filter @workspace/api-server build
+
+# Prune dev dependencies for production
+RUN pnpm --filter @workspace/api-server --prod deploy /app/deploy/api-server && \
+    pnpm --filter @workspace/db --prod deploy /app/deploy/db && \
+    pnpm --filter @workspace/api-zod --prod deploy /app/deploy/api-zod
+
+# ── Stage 2: Production ───────────────────────────────────────────────────────
+FROM node:22-alpine AS production
+
+RUN apk add --no-cache tini ca-certificates && \
+    addgroup -S v8 && adduser -S v8 -G v8
+
+WORKDIR /app
+
+# Copy built artifacts from build stage
+COPY --from=build /app/artifacts/api-server/dist ./artifacts/api-server/dist
+COPY --from=build /app/lib ./lib
+
+# Copy production node_modules
+COPY --from=build /app/deploy/api-server/node_modules ./artifacts/api-server/node_modules
+COPY --from=build /app/deploy/db/node_modules ./lib/db/node_modules
+COPY --from=build /app/deploy/api-zod/node_modules ./lib/api-zod/node_modules
+
+# Copy runtime dependencies
+COPY --from=build /app/node_modules/.pnpm ./node_modules/.pnpm
+COPY --from=build /app/package.json ./package.json
+
+# Create reports directory
+RUN mkdir -p /data/reports && chown -R v8:v8 /data
+
+# Environment defaults
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV REPORTS_DIR=/data/reports
+
+USER v8
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/healthz || exit 1
+
+ENTRYPOINT ["tini", "--"]
+CMD ["node", "--enable-source-maps", "artifacts/api-server/dist/index.js"]

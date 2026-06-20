@@ -2,14 +2,15 @@ import { Router, type IRouter } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { signToken, requireAuth } from "../middlewares/auth";
+import { createHash } from "node:crypto";
 
 const router: IRouter = Router();
 
-const ADMIN_PASSWORD = "admin123";
-
 function hashPassword(pw: string): string {
-  // Simple deterministic hash for demo — not production-grade
-  return Buffer.from(pw + "_v8salt").toString("base64");
+  // SHA-256 hex digest for deterministic dev-mode authentication.
+  // In production, replace with bcrypt and proper password policies.
+  return createHash("sha256").update(pw).digest("hex");
 }
 
 function verifyPassword(pw: string, hash: string): boolean {
@@ -30,8 +31,8 @@ router.post("/auth/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // Simple token: base64 of userId:username:timestamp
-    const token = Buffer.from(`${user.id}:${user.username}:${Date.now()}`).toString("base64");
+    // Sign a proper JWT token with HMAC-SHA256
+    const token = signToken(user);
 
     return res.json({
       user: {
@@ -54,34 +55,34 @@ router.post("/auth/logout", (_req, res) => {
   res.json({ message: "Logged out" });
 });
 
-// GET /api/auth/me
-router.get("/auth/me", async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
+// GET /api/auth/me — protected by JWT middleware
+router.get("/auth/me", requireAuth, async (req, res) => {
+  if (!req.user) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  const token = authHeader.slice(7);
-  try {
-    const decoded = Buffer.from(token, "base64").toString("utf-8");
-    const parts = decoded.split(":");
-    const userId = parseInt(parts[0]);
-    if (isNaN(userId)) return res.status(401).json({ error: "Invalid token" });
 
-    const users = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-    const user = users[0];
-    if (!user) return res.status(401).json({ error: "User not found" });
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      username: usersTable.username,
+      role: usersTable.role,
+      tier: usersTable.tier,
+      createdAt: usersTable.createdAt,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.user.userId));
 
-    return res.json({
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      tier: user.tier,
-      createdAt: user.createdAt.toISOString(),
-    });
-  } catch (err) {
-    logger.error({ err }, "Get me error");
-    return res.status(401).json({ error: "Invalid token" });
+  if (!user) {
+    return res.status(401).json({ error: "User not found" });
   }
+
+  return res.json({
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    tier: user.tier,
+    createdAt: user.createdAt.toISOString(),
+  });
 });
 
 export function hashPasswordExport(pw: string): string {

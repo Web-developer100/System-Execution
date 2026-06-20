@@ -1,10 +1,16 @@
 import { useGetTools, useInstallTool, useDeleteTool, useUpdateTool, getGetToolsQueryKey } from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
-import { Wrench, Github, RefreshCw, Trash2, CheckCircle2, XCircle, AlertCircle, Plus, Loader2, GitBranch, Package, TestTube, Cpu } from "lucide-react";
+import { Wrench, Github, RefreshCw, Trash2, CheckCircle2, XCircle, AlertCircle, Plus, Loader2, GitBranch, Package, TestTube, Cpu, Info, ExternalLink, Globe, Code, Hash, CalendarDays } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -85,6 +91,12 @@ export default function Tools() {
 
   const [repoUrl, setRepoUrl] = useState("");
   const [toolName, setToolName] = useState("");
+  const [selectedToolId, setSelectedToolId] = useState<number | null>(null);
+
+  // Derive selectedTool from the tools list
+  const selectedTool = selectedToolId !== null
+    ? tools?.find(t => t.id === selectedToolId) ?? null
+    : null;
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getGetToolsQueryKey() });
 
@@ -190,10 +202,11 @@ export default function Tools() {
             return (
               <Card
                 key={tool.id}
-                className={`bg-card border-primary/20 hover:border-primary/50 transition-all group relative overflow-hidden ${
+                className={`bg-card border-primary/20 hover:border-primary/50 transition-all group relative overflow-hidden cursor-pointer ${
                   isInstalling ? "border-cyan-400/30" : ""
                 }`}
                 data-testid={`card-tool-${tool.id}`}
+                onClick={() => setSelectedToolId(tool.id)}
               >
                 {isInstalling && (
                   <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-pulse" />
@@ -251,7 +264,7 @@ export default function Tools() {
                           size="sm"
                           variant="outline"
                           className="flex-1 h-8 border-primary/20 text-primary/60 hover:border-primary/60 hover:text-primary rounded-none text-[11px] uppercase tracking-wider"
-                          onClick={() => updateMut.mutate({ id: tool.id }, { onSuccess: invalidate })}
+                          onClick={(e) => { e.stopPropagation(); updateMut.mutate({ id: tool.id }, { onSuccess: invalidate }); }}
                           disabled={updateMut.isPending || tool.status === 'updating'}
                           data-testid={`button-update-${tool.id}`}
                         >
@@ -262,7 +275,7 @@ export default function Tools() {
                           size="icon"
                           variant="ghost"
                           className="h-8 w-8 text-primary/30 hover:bg-destructive/10 hover:text-destructive rounded-none"
-                          onClick={() => deleteMut.mutate({ id: tool.id }, { onSuccess: invalidate })}
+                          onClick={(e) => { e.stopPropagation(); deleteMut.mutate({ id: tool.id }, { onSuccess: invalidate }); }}
                           data-testid={`button-delete-${tool.id}`}
                         >
                           <Trash2 className="w-3 h-3" />
@@ -276,6 +289,124 @@ export default function Tools() {
           })}
         </div>
       )}
+
+      {/* Tool Detail Modal */}
+      <Dialog open={selectedToolId !== null} onOpenChange={(open) => { if (!open) setSelectedToolId(null); }}>
+        <DialogContent className="bg-black border-primary/30 text-primary rounded-none max-w-2xl max-h-[80vh] overflow-y-auto">
+          {selectedTool && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-primary glow-text font-mono uppercase tracking-widest flex items-center gap-2">
+                  <Wrench className="w-5 h-5" />
+                  {selectedTool.name}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4 mt-2">
+                {/* GitHub & Description */}
+                {selectedTool.description && (
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-primary/30 font-mono mb-1">DESCRIPTION</div>
+                    <p className="text-xs text-primary/70 font-mono leading-relaxed">{selectedTool.description}</p>
+                  </div>
+                )}
+
+                {selectedTool.githubUrl && (
+                  <a
+                    href={selectedTool.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs font-mono text-primary/50 hover:text-primary transition-colors"
+                  >
+                    <Github className="w-3.5 h-3.5" />
+                    {selectedTool.githubUrl.replace("https://github.com/", "")}
+                    <ExternalLink className="w-3 h-3 opacity-50" />
+                  </a>
+                )}
+
+                {/* Metadata grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="border border-primary/10 bg-black/50 p-3">
+                    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-primary/30 font-mono mb-1">
+                      <Code className="w-3 h-3" /> Language
+                    </div>
+                    <div className="text-sm font-mono text-primary/80">{selectedTool.language ?? "N/A"}</div>
+                  </div>
+                  <div className="border border-primary/10 bg-black/50 p-3">
+                    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-primary/30 font-mono mb-1">
+                      <Hash className="w-3 h-3" /> Version
+                    </div>
+                    <div className="text-sm font-mono text-primary/80">{selectedTool.version ?? "N/A"}</div>
+                  </div>
+                  <div className="border border-primary/10 bg-black/50 p-3">
+                    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-primary/30 font-mono mb-1">
+                      <GitBranch className="w-3 h-3" /> Installed Commit
+                    </div>
+                    <div className="text-sm font-mono text-primary/80">
+                      {selectedTool.installedCommit ? selectedTool.installedCommit.slice(0, 12) : "N/A"}
+                    </div>
+                  </div>
+                  <div className="border border-primary/10 bg-black/50 p-3">
+                    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-primary/30 font-mono mb-1">
+                      <RefreshCw className="w-3 h-3" /> Latest Commit
+                    </div>
+                    <div className="text-sm font-mono text-primary/80">
+                      {selectedTool.latestCommit ? selectedTool.latestCommit.slice(0, 12) : "N/A"}
+                    </div>
+                  </div>
+                  <div className="border border-primary/10 bg-black/50 p-3">
+                    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-primary/30 font-mono mb-1">
+                      <CalendarDays className="w-3 h-3" /> Repository Created
+                    </div>
+                    <div className="text-sm font-mono text-primary/80">
+                      {selectedTool.repoCreatedAt ? new Date(selectedTool.repoCreatedAt).toLocaleDateString() : "N/A"}
+                    </div>
+                  </div>
+                  <div className="border border-primary/10 bg-black/50 p-3">
+                    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-primary/30 font-mono mb-1">
+                      <CalendarDays className="w-3 h-3" /> Last Updated
+                    </div>
+                    <div className="text-sm font-mono text-primary/80">
+                      {selectedTool.repoUpdatedAt ? new Date(selectedTool.repoUpdatedAt).toLocaleDateString() : "N/A"}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Local Path */}
+                {selectedTool.localPath && (
+                  <div className="border border-primary/10 bg-black/50 p-3">
+                    <div className="text-[10px] uppercase tracking-widest text-primary/30 font-mono mb-1">LOCAL PATH</div>
+                    <div className="text-xs font-mono text-primary/50 break-all">{selectedTool.localPath}</div>
+                  </div>
+                )}
+
+                {/* Updates available indicator */}
+                {selectedTool.latestCommit && selectedTool.installedCommit && selectedTool.latestCommit !== selectedTool.installedCommit && (
+                  <div className="border border-yellow-500/30 bg-yellow-500/5 p-3">
+                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-yellow-400">
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      Update available — latest commit differs from installed version
+                    </div>
+                  </div>
+                )}
+
+                {/* Update button */}
+                <Button
+                  className="w-full bg-primary text-black h-10 rounded-none glow-box uppercase tracking-widest text-xs font-bold"
+                  onClick={() => {
+                    if (selectedTool.id !== undefined) {
+                      updateMut.mutate({ id: selectedTool.id }, { onSuccess: () => { invalidate(); toast({ title: "UPDATE COMPLETE", description: `${selectedTool.name} updated successfully` }); } });
+                    }
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Check for Updates
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

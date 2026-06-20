@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "v8platform.fullname" . }}-api
+  labels:
+    app.kubernetes.io/component: api-server
+    {{- include "v8platform.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.apiServer.service.type }}
+  ports:
+    - port: {{ .Values.apiServer.service.port }}
+      targetPort: http
+      name: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/component: api-server
+    {{- include "v8platform.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "v8platform.fullname" . }}-frontend
+  labels:
+    app.kubernetes.io/component: frontend
+    {{- include "v8platform.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.frontend.service.type }}
+  ports:
+    - port: {{ .Values.frontend.service.port }}
+      targetPort: http
+      name: http
+      protocol: TCP
+  selector:
+    app.kubernetes.io/component: frontend
+    {{- include "v8platform.selectorLabels" . | nindent 4 }}

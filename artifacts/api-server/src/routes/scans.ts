@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db, scansTable, scanLogsTable, vulnerabilitiesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { orchestrator } from "../orchestrator-instance";
 
 const router: IRouter = Router();
 
@@ -43,29 +44,6 @@ function normalizeTools(rawTools: string[]): string[] {
   );
 }
 
-async function markAwaitingExecutor(scanId: number, target: string, tools: string[]) {
-  await db.update(scansTable)
-    .set({
-      status: "queued",
-      progress: 0,
-      startedAt: null,
-      completedAt: null,
-    })
-    .where(eq(scansTable.id, scanId));
-
-  await db.insert(scanLogsTable).values({
-    scanId,
-    level: "info",
-    message: `[ORCHESTRATOR] Scan #${scanId} queued for ${target}. Requested tools: ${tools.join(", ")}.`,
-  });
-
-  await db.insert(scanLogsTable).values({
-    scanId,
-    level: "warn",
-    message: "[ORCHESTRATOR] No verified executor worker is connected. The platform will not fabricate findings or simulate tool output.",
-  });
-}
-
 // GET /api/scans
 router.get("/scans", async (_req, res) => {
   try {
@@ -80,7 +58,7 @@ router.get("/scans", async (_req, res) => {
   }
 });
 
-// POST /api/scans
+// POST /api/scans — create and enqueue for real execution
 router.post("/scans", async (req, res) => {
   const { target, tools, useProxy } = req.body as { target: string; tools: string[]; useProxy?: boolean };
   const normalizedTarget = normalizeTarget(target ?? "");
@@ -99,7 +77,9 @@ router.post("/scans", async (req, res) => {
       progress: 0,
     }).returning();
 
-    await markAwaitingExecutor(scan.id, normalizedTarget, normalizedTools);
+    // Enqueue in the scan orchestrator for real execution
+    await orchestrator.enqueueScan(scan.id);
+
     return res.status(201).json(formatScan(scan, 0));
   } catch (err) {
     logger.error({ err }, "Create scan error");
@@ -135,11 +115,14 @@ router.delete("/scans/:id", async (req, res) => {
   }
 });
 
-// POST /api/scans/:id/stop
+// POST /api/scans/:id/stop — routes through orchestrator
 router.post("/scans/:id/stop", async (req, res) => {
   const id = Number.parseInt(req.params.id, 10);
   if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
   try {
+    // Signal the orchestrator to abort this scan
+    await orchestrator.stopScan(id);
+
     const [scan] = await db.update(scansTable)
       .set({ status: "stopped", completedAt: new Date() })
       .where(eq(scansTable.id, id))

@@ -22,7 +22,11 @@ export function Toaster() {
                 <ToastDescription>{description}</ToastDescription>
               )}
             </div>
-            {action}
+            {action && (
+              <button onClick={action.onClick} className="text-xs font-medium underline underline-offset-2">
+                {action.children ?? action.altText}
+              </button>
+            )}
             <ToastClose />
           </Toast>
         )

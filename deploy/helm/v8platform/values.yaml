@@ -1,0 +1,128 @@
+# ── Global Configuration ──────────────────────────────────────────────────────
+global:
+  environment: production
+  imageRegistry: ghcr.io/v8platform
+
+# ── Service Account ──────────────────────────────────────────────────────────
+serviceAccount:
+  create: false
+  name: ""
+  automount: true
+  annotations: {}
+
+# ── API Server ───────────────────────────────────────────────────────────────
+apiServer:
+  name: api-server
+  replicaCount: 2
+  image:
+    repository: v8platform/api-server
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "2"
+      memory: "1Gi"
+  env:
+    NODE_ENV: production
+    PORT: "8080"
+    LOG_LEVEL: info
+    AI_ENABLE_ATTACK_CHAINS: "true"
+  persistence:
+    enabled: true
+    size: 10Gi
+    mountPath: /data/reports
+  livenessProbe:
+    path: /api/healthz
+    initialDelaySeconds: 30
+    periodSeconds: 15
+  readinessProbe:
+    path: /api/observability/health/readiness
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# ── Frontend ─────────────────────────────────────────────────────────────────
+frontend:
+  name: frontend
+  replicaCount: 2
+  image:
+    repository: v8platform/frontend
+    tag: latest
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  livenessProbe:
+    path: /
+    initialDelaySeconds: 10
+    periodSeconds: 15
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# ── Database ─────────────────────────────────────────────────────────────────
+database:
+  provider: postgresql
+  host: ""
+  port: 5432
+  name: v8platform
+  user: v8
+  existingSecret: ""
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: ""
+
+# ── Ingress ──────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  host: v8platform.example.com
+  tls:
+    enabled: true
+    secretName: v8platform-tls
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+
+# ── Monitoring (requires prometheus-community/kube-prometheus-stack) ─────────
+monitoring:
+  enabled: false
+  prometheusRule:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+    interval: 15s
+    path: /api/observability/metrics
+
+# ── Secrets (use External Secrets Operator or Vault in production) ───────────
+secrets:
+  jwtSecret: "change-me-in-production"
+  dbPassword: "change-me-in-production"
+  openaiApiKey: ""
+  anthropicApiKey: ""
+  slackWebhookUrl: ""
+  discordWebhookUrl: ""
+  smtpHost: ""
+  smtpPort: "587"
+  smtpUser: ""
+  smtpPass: ""

@@ -1,7 +1,12 @@
 import { Router, type IRouter } from "express";
 import { db, reportsTable, scansTable, vulnerabilitiesTable, toolsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, like, or, inArray } from "drizzle-orm";
 import { logger } from "../lib/logger";
+import { generateAndSaveReport, collectReportData, generateHtmlReport, REPORTS_DIR } from "../services/report-generator";
+import { reportEngine, reportDelivery } from "../services/enterprise-reporting";
+import type { ReportRequest, ReportCategory, ReportFormat, ComplianceFramework, CronFrequency, DeliveryMethod } from "../services/enterprise-reporting";
+import path from "node:path";
+import { readFile, readdir } from "node:fs/promises";
 
 const router: IRouter = Router();
 
@@ -17,11 +22,7 @@ function formatReport(r: typeof reportsTable.$inferSelect) {
 
 function severityColor(sev: string): string {
   const colors: Record<string, string> = {
-    critical: "#ef4444",
-    high: "#f97316",
-    medium: "#eab308",
-    low: "#3b82f6",
-    info: "#6b7280",
+    critical: "#ef4444", high: "#f97316", medium: "#eab308", low: "#3b82f6", info: "#6b7280",
   };
   return colors[sev] ?? "#6b7280";
 }
@@ -37,187 +38,8 @@ function severityBar(count: number, total: number, color: string): string {
   </div>`;
 }
 
-async function generateReportHtml(reportId: number, scanId: number): Promise<string> {
-  const [scan] = await db.select().from(scansTable).where(eq(scansTable.id, scanId));
-  const vulns = await db.select().from(vulnerabilitiesTable).where(eq(vulnerabilitiesTable.scanId, scanId));
-  const tools = await db.select().from(toolsTable);
+// ── GET /api/reports ──────────────────────────────────────────────────────
 
-  const scanTools = JSON.parse(scan?.tools || "[]") as string[];
-  const target = scan?.target ?? "Unknown Target";
-  const generatedAt = new Date().toLocaleString("en-GB", { timeZone: "UTC", hour12: false });
-
-  const counts = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
-  for (const v of vulns) {
-    const s = v.severity as keyof typeof counts;
-    if (s in counts) counts[s]++;
-  }
-  const total = vulns.length;
-  const aiValidated = vulns.filter(v => v.aiValidated).length;
-
-  const riskLevel = counts.critical > 0 ? "CRITICAL" : counts.high > 2 ? "HIGH" : counts.medium > 3 ? "MEDIUM" : "LOW";
-  const riskColor = riskLevel === "CRITICAL" ? "#ef4444" : riskLevel === "HIGH" ? "#f97316" : riskLevel === "MEDIUM" ? "#eab308" : "#22c55e";
-
-  const vulnsHtml = vulns.map((v, idx) => `
-    <div style="margin:16px 0;padding:20px;border:1px solid ${severityColor(v.severity)}44;background:#050f05;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-        <span style="padding:3px 10px;background:${severityColor(v.severity)}22;border:1px solid ${severityColor(v.severity)};color:${severityColor(v.severity)};font-family:monospace;font-size:11px;text-transform:uppercase;letter-spacing:2px;">${v.severity}</span>
-        ${v.aiValidated ? `<span style="padding:3px 10px;background:#10b98122;border:1px solid #10b981;color:#10b981;font-family:monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;">◆ AI VERIFIED</span>` : ""}
-        <span style="color:#555;font-family:monospace;font-size:10px;margin-left:auto;">FINDING #${String(idx + 1).padStart(3, "0")}</span>
-      </div>
-      <h3 style="color:#10b981;font-family:monospace;font-size:14px;margin:0 0 8px;text-shadow:0 0 8px #10b98166;">${v.title}</h3>
-      <div style="color:#10b98166;font-family:monospace;font-size:11px;margin-bottom:12px;word-break:break-all;">${v.url}</div>
-      ${v.description ? `<div style="margin:12px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#555;font-family:monospace;margin-bottom:6px;">DESCRIPTION</div><p style="color:#aaa;font-size:12px;line-height:1.7;font-family:monospace;">${v.description.replace(/\n/g, "<br>")}</p></div>` : ""}
-      ${v.evidence ? `<div style="margin:12px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#555;font-family:monospace;margin-bottom:6px;">EVIDENCE PAYLOAD</div><pre style="background:#000;border:1px solid #1a2a1a;padding:14px;font-family:monospace;font-size:11px;color:#22c55e;overflow-x:auto;white-space:pre-wrap;line-height:1.6;">${v.evidence.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre></div>` : ""}
-      ${v.fix ? `<div style="margin:12px 0;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#555;font-family:monospace;margin-bottom:6px;">◆ AI-GENERATED REMEDIATION PATCH</div><pre style="background:#000517;border:1px solid #10b98133;padding:14px;font-family:monospace;font-size:11px;color:#10b981;overflow-x:auto;white-space:pre-wrap;line-height:1.6;">${v.fix.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre></div>` : ""}
-    </div>
-  `).join("");
-
-  const toolRows = tools.map(tool => `
-    <tr>
-      <td style="padding:10px 14px;font-family:monospace;font-size:12px;color:#10b981;">${tool.name}</td>
-      <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:#555;">${tool.version ?? "N/A"}</td>
-      <td style="padding:10px 14px;">
-        <span style="padding:2px 8px;background:${tool.status === "active" ? "#10b98122" : "#ef444422"};border:1px solid ${tool.status === "active" ? "#10b981" : "#ef4444"};color:${tool.status === "active" ? "#10b981" : "#ef4444"};font-family:monospace;font-size:10px;text-transform:uppercase;">${tool.status}</span>
-      </td>
-      <td style="padding:10px 14px;font-family:monospace;font-size:11px;color:${scanTools.includes(tool.name.toLowerCase()) ? "#10b981" : "#333"};">${scanTools.map(s => s.toLowerCase()).includes(tool.name.toLowerCase()) ? "DEPLOYED" : "EXCLUDED"}</td>
-    </tr>
-  `).join("");
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>V8 Security Assessment Report #${reportId}</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #020b02; color: #10b981; font-family: 'Share Tech Mono', 'Courier New', monospace; min-height: 100vh; }
-    body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px); pointer-events: none; z-index: 1000; }
-    .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
-    .glow { text-shadow: 0 0 10px #10b981, 0 0 20px #10b98166; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <!-- Header -->
-    <div style="border-bottom:2px solid #10b981;padding-bottom:28px;margin-bottom:32px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-        <div>
-          <div style="font-size:11px;letter-spacing:4px;color:#555;text-transform:uppercase;margin-bottom:8px;">V8 NEURAL EXPLOITATION PLATFORM</div>
-          <h1 class="glow" style="font-size:28px;letter-spacing:3px;text-transform:uppercase;">SECURITY ASSESSMENT REPORT</h1>
-          <div style="color:#555;font-size:12px;margin-top:8px;letter-spacing:2px;">REPORT_ID: ${String(reportId).padStart(6, "0")} ● SCAN_ID: ${String(scanId).padStart(4, "0")}</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="padding:12px 20px;border:2px solid ${riskColor};background:${riskColor}11;">
-            <div style="font-size:10px;letter-spacing:3px;color:#555;margin-bottom:4px;">RISK LEVEL</div>
-            <div style="font-size:20px;font-weight:bold;color:${riskColor};text-shadow:0 0 12px ${riskColor}88;">${riskLevel}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Metadata -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:36px;">
-      ${[
-        ["TARGET", target],
-        ["GENERATED", generatedAt + " UTC"],
-        ["OPERATOR", "V8-KERNEL / AUTOMATED"],
-      ].map(([label, value]) => `
-        <div style="padding:16px;border:1px solid #1a2a1a;background:#050f05;">
-          <div style="font-size:10px;letter-spacing:2px;color:#555;margin-bottom:6px;">${label}</div>
-          <div style="font-size:12px;color:#10b981;word-break:break-all;">${value}</div>
-        </div>
-      `).join("")}
-    </div>
-
-    <!-- Executive Summary -->
-    <div style="margin-bottom:36px;">
-      <h2 style="font-size:14px;letter-spacing:3px;text-transform:uppercase;color:#10b981;border-bottom:1px solid #1a2a1a;padding-bottom:10px;margin-bottom:20px;">
-        ◆ EXECUTIVE SUMMARY
-      </h2>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;">
-        ${["critical","high","medium","low","info"].map(sev => `
-          <div style="padding:16px;border:1px solid ${severityColor(sev)}44;background:${severityColor(sev)}08;text-align:center;">
-            <div style="font-size:28px;font-weight:bold;color:${severityColor(sev)};text-shadow:0 0 12px ${severityColor(sev)}66;">${counts[sev as keyof typeof counts]}</div>
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:${severityColor(sev)};margin-top:4px;">${sev}</div>
-          </div>
-        `).join("")}
-      </div>
-
-      <!-- Severity bars -->
-      <div style="padding:20px;border:1px solid #1a2a1a;background:#050f05;">
-        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;margin-bottom:8px;">
-          <div style="font-size:11px;text-transform:uppercase;color:#ef4444;letter-spacing:1px;">CRITICAL</div>
-          <div>${severityBar(counts.critical, total, "#ef4444")}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;margin-bottom:8px;">
-          <div style="font-size:11px;text-transform:uppercase;color:#f97316;letter-spacing:1px;">HIGH</div>
-          <div>${severityBar(counts.high, total, "#f97316")}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;margin-bottom:8px;">
-          <div style="font-size:11px;text-transform:uppercase;color:#eab308;letter-spacing:1px;">MEDIUM</div>
-          <div>${severityBar(counts.medium, total, "#eab308")}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;margin-bottom:8px;">
-          <div style="font-size:11px;text-transform:uppercase;color:#3b82f6;letter-spacing:1px;">LOW</div>
-          <div>${severityBar(counts.low, total, "#3b82f6")}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;">
-          <div style="font-size:11px;text-transform:uppercase;color:#6b7280;letter-spacing:1px;">INFO</div>
-          <div>${severityBar(counts.info, total, "#6b7280")}</div>
-        </div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;">
-        <div style="padding:16px;border:1px solid #1a2a1a;background:#050f05;">
-          <span style="font-size:10px;color:#555;letter-spacing:2px;">TOTAL FINDINGS</span>
-          <div style="font-size:22px;color:#10b981;margin-top:4px;">${total}</div>
-        </div>
-        <div style="padding:16px;border:1px solid #10b98133;background:#10b98108;">
-          <span style="font-size:10px;color:#555;letter-spacing:2px;">AI VALIDATED</span>
-          <div style="font-size:22px;color:#10b981;margin-top:4px;">${aiValidated} / ${total}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tool Scope Matrix -->
-    <div style="margin-bottom:36px;">
-      <h2 style="font-size:14px;letter-spacing:3px;text-transform:uppercase;color:#10b981;border-bottom:1px solid #1a2a1a;padding-bottom:10px;margin-bottom:20px;">
-        ◆ SCOPE MATRIX — TOOL DEPLOYMENT STATUS
-      </h2>
-      <table style="width:100%;border-collapse:collapse;background:#050f05;border:1px solid #1a2a1a;">
-        <thead>
-          <tr style="border-bottom:1px solid #1a2a1a;background:#000;">
-            <th style="padding:12px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#555;">TOOL</th>
-            <th style="padding:12px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#555;">VERSION</th>
-            <th style="padding:12px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#555;">STATUS</th>
-            <th style="padding:12px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#555;">DEPLOYMENT</th>
-          </tr>
-        </thead>
-        <tbody>${toolRows || `<tr><td colspan="4" style="padding:16px;text-align:center;color:#555;font-size:12px;">No tools registered</td></tr>`}</tbody>
-      </table>
-    </div>
-
-    <!-- Vulnerability Details -->
-    <div style="margin-bottom:36px;">
-      <h2 style="font-size:14px;letter-spacing:3px;text-transform:uppercase;color:#10b981;border-bottom:1px solid #1a2a1a;padding-bottom:10px;margin-bottom:20px;">
-        ◆ VULNERABILITY FINDINGS — DETAILED ANALYSIS
-      </h2>
-      ${vulnsHtml || `<div style="padding:32px;text-align:center;border:1px solid #1a2a1a;color:#555;font-size:12px;">NO VULNERABILITIES RECORDED FOR THIS SCAN</div>`}
-    </div>
-
-    <!-- Footer -->
-    <div style="border-top:1px solid #1a2a1a;padding-top:24px;display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-size:10px;color:#333;letter-spacing:2px;">V8 NEURAL EXPLOITATION PLATFORM — CONFIDENTIAL</div>
-      <div style="font-size:10px;color:#333;letter-spacing:2px;">GENERATED: ${generatedAt} UTC</div>
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
-// GET /api/reports
 router.get("/reports", async (_req, res) => {
   try {
     const reports = await db.select().from(reportsTable).orderBy(desc(reportsTable.createdAt));
@@ -228,32 +50,130 @@ router.get("/reports", async (_req, res) => {
   }
 });
 
-// POST /api/reports
-router.post("/reports", async (req, res) => {
-  const { scanId } = req.body as { scanId: number };
-  if (!scanId) return res.status(400).json({ error: "scanId required" });
+// ── GET /api/reports/search ───────────────────────────────────────────────
+
+router.get("/reports/search", async (req, res) => {
   try {
-    const [report] = await db.insert(reportsTable).values({
-      scanId,
-      status: "generating",
-    }).returning();
+    const q = (req.query.q as string ?? "").trim();
+    if (!q) {
+      // No query: return all reports
+      const reports = await db.select().from(reportsTable).orderBy(desc(reportsTable.createdAt));
+      return res.json(reports.map(formatReport));
+    }
 
-    setTimeout(async () => {
-      try {
-        await db.update(reportsTable)
-          .set({ status: "ready", downloadUrl: `/api/reports/${report.id}/download` })
-          .where(eq(reportsTable.id, report.id));
-      } catch {}
-    }, 2500);
+    // Search in scans the reports reference
+    const scanIds = await db
+      .select({ id: scansTable.id })
+      .from(scansTable)
+      .where(
+        or(
+          like(scansTable.target, `%${q}%`),
+          like(scansTable.status, `%${q}%`),
+          like(scansTable.tools, `%${q}%`),
+        ),
+      );
 
-    return res.status(201).json(formatReport(report));
+    const ids = scanIds.map(s => s.id);
+
+    if (ids.length === 0) {
+      return res.json([]);
+    }
+
+    const reports = await db
+      .select()
+      .from(reportsTable)
+      .where(and(
+        inArray(reportsTable.scanId, ids),
+      ))
+      .orderBy(desc(reportsTable.createdAt))
+      .limit(50);
+
+    return res.json(reports.map(formatReport));
   } catch (err) {
-    logger.error({ err }, "Generate report error");
-    return res.status(500).json({ error: "Internal server error" });
+    logger.error({ err }, "Search reports error");
+    return res.status(500).json({ error: "Internal search error" });
   }
 });
 
-// GET /api/reports/:id/download — Generate and serve full HTML report
+// ── POST /api/reports ─────────────────────────────────────────────────────
+
+router.post("/reports", async (req, res) => {
+  const { scanId, category, formats, complianceFrameworks, includeCharts, includeEvidence, includeRemediation, includeAiAnalysis } = req.body as {
+    scanId: number;
+    category?: ReportCategory;
+    formats?: ReportFormat[];
+    complianceFrameworks?: ComplianceFramework[];
+    includeCharts?: boolean;
+    includeEvidence?: boolean;
+    includeRemediation?: boolean;
+    includeAiAnalysis?: boolean;
+  };
+
+  if (!scanId) return res.status(400).json({ error: "scanId required" });
+
+  try {
+    // Generate enterprise report
+    const reqData: ReportRequest = {
+      scanId,
+      category: category ?? "technical",
+      formats: formats ?? ["html", "json", "csv", "sarif"],
+      complianceFrameworks,
+      includeCharts: includeCharts ?? true,
+      includeEvidence: includeEvidence ?? true,
+      includeRemediation: includeRemediation ?? true,
+      includeAiAnalysis: includeAiAnalysis ?? true,
+    };
+
+    const result = await reportEngine.generateReport(reqData);
+
+    // Also generate the legacy report for backward compatibility
+    const [report] = await db.insert(reportsTable).values({
+      scanId,
+      status: "ready",
+      downloadUrl: `/api/reports/enterprise/download/${result.id}/${result.files[0]?.filename ?? ""}`,
+    }).returning();
+
+    return res.status(201).json({
+      ...formatReport(report),
+      enterprise: {
+        id: result.id,
+        category: result.category,
+        formats: result.formats,
+        files: result.files.map(f => ({ format: f.format, filename: f.filename, url: f.url, sizeBytes: f.sizeBytes })),
+        riskScore: result.riskScore,
+        totalFindings: result.totalFindings,
+        criticalCount: result.criticalCount,
+        highCount: result.highCount,
+        durationMs: result.durationMs,
+      },
+    });
+  } catch (err) {
+    logger.error({ err, scanId }, "Generate enterprise report error");
+    return res.status(500).json({ error: "Report generation failed" });
+  }
+});
+
+// ── POST /api/reports/preview ─────────────────────────────────────────────
+
+router.post("/reports/preview", async (req, res) => {
+  const { scanId, category } = req.body as { scanId: number; category?: ReportCategory };
+
+  if (!scanId) return res.status(400).json({ error: "scanId required" });
+
+  try {
+    const data = await collectReportData(scanId);
+    const html = generateHtmlReport(data);
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(html);
+  } catch (err) {
+    logger.error({ err, scanId }, "Preview report error");
+    return res.status(500).json({ error: "Preview generation failed" });
+  }
+});
+
+// ── GET /api/reports/:id/download ─────────────────────────────────────────
+
 router.get("/reports/:id/download", async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
@@ -262,7 +182,8 @@ router.get("/reports/:id/download", async (req, res) => {
     if (!report) return res.status(404).json({ error: "Report not found" });
     if (report.status !== "ready") return res.status(425).json({ error: "Report not ready yet" });
 
-    const html = await generateReportHtml(id, report.scanId);
+    const data = await collectReportData(report.scanId);
+    const html = generateHtmlReport(data);
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Content-Disposition", `inline; filename="v8-security-report-${id}.html"`);
@@ -270,6 +191,253 @@ router.get("/reports/:id/download", async (req, res) => {
   } catch (err) {
     logger.error({ err }, "Download report error");
     return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── GET /api/reports/download/:filename ───────────────────────────────────
+
+router.get("/reports/download/:filename", async (req, res) => {
+  const filename = req.params.filename;
+  if (!filename || filename.includes("..") || filename.includes("/")) {
+    return res.status(400).json({ error: "Invalid filename" });
+  }
+
+  try {
+    const filePath = path.join(REPORTS_DIR, filename);
+    const content = await readFile(filePath, "utf-8");
+
+    const isHtml = filename.endsWith(".html");
+    const isMd = filename.endsWith(".md");
+
+    if (isHtml) {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+    } else if (isMd) {
+      res.setHeader("Content-Type", "text/markdown; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    } else {
+      return res.status(400).json({ error: "Unsupported file type" });
+    }
+
+    return res.send(content);
+  } catch (err) {
+    logger.error({ err, filename }, "Download report error");
+    return res.status(404).json({ error: "Report file not found" });
+  }
+});
+
+// ── Enterprise Report Routes ─────────────────────────────────────────────
+
+// GET /api/reports/enterprise/download/:reportId/:filename
+router.get("/reports/enterprise/download/:reportId/:filename", async (req, res) => {
+  const { reportId, filename } = req.params;
+
+  if (!reportId || !filename || filename.includes("..") || filename.includes("/")) {
+    return res.status(400).json({ error: "Invalid path" });
+  }
+
+  try {
+    const filePath = path.join(REPORTS_DIR, "enterprise", reportId, filename);
+    const content = await readFile(filePath, "utf-8");
+
+    const ext = filename.split(".").pop() ?? "";
+    const mimeTypes: Record<string, string> = {
+      html: "text/html",
+      md: "text/markdown",
+      json: "application/json",
+      csv: "text/csv",
+      xml: "application/xml",
+      sarif: "application/sarif+json",
+    };
+
+    const mime = mimeTypes[ext] ?? "application/octet-stream";
+    const disposition = ext === "html" ? "inline" : "attachment";
+
+    res.setHeader("Content-Type", mime);
+    res.setHeader("Content-Disposition", `${disposition}; filename="${filename}"`);
+    return res.send(content);
+  } catch (err) {
+    logger.error({ err, reportId, filename }, "Enterprise download error");
+    return res.status(404).json({ error: "File not found" });
+  }
+});
+
+// GET /api/reports/enterprise/:reportId — metadata
+router.get("/reports/enterprise/:reportId", async (req, res) => {
+  const reportId = req.params.reportId;
+  if (!reportId) return res.status(400).json({ error: "reportId required" });
+
+  try {
+    const dirPath = path.join(REPORTS_DIR, "enterprise", reportId);
+    const files = await readdir(dirPath);
+    const fileInfos = files.map(f => {
+      const ext = f.split(".").pop() ?? "";
+      return { filename: f, format: ext === "sarif.json" ? "sarif" : ext };
+    });
+
+    return res.json({
+      id: reportId,
+      files: fileInfos,
+      downloadUrl: `/api/reports/enterprise/download/${reportId}/`,
+    });
+  } catch (err) {
+    return res.status(404).json({ error: "Report not found" });
+  }
+});
+
+// ── Schedule Routes ──────────────────────────────────────────────────────
+
+// GET /api/reports/schedules
+router.get("/reports/schedules", (_req, res) => {
+  try {
+    const schedules = reportEngine.getSchedules();
+    return res.json(schedules);
+  } catch (err) {
+    logger.error({ err }, "Get schedules error");
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// POST /api/reports/schedules
+router.post("/reports/schedules", (req, res) => {
+  try {
+    const { scanId, category, formats, frequency, cronExpression, deliveryMethods } = req.body as {
+      scanId: number;
+      category: ReportCategory;
+      formats: ReportFormat[];
+      frequency: CronFrequency;
+      cronExpression?: string;
+      deliveryMethods?: DeliveryMethod[];
+    };
+
+    if (!scanId || !category || !frequency) {
+      return res.status(400).json({ error: "scanId, category, and frequency required" });
+    }
+
+    const schedule = reportEngine.createScheduledReport({
+      scanId,
+      category,
+      formats: formats ?? ["html", "json"],
+      frequency,
+      cronExpression,
+      deliveryMethods,
+    });
+
+    return res.status(201).json(schedule);
+  } catch (err) {
+    logger.error({ err }, "Create schedule error");
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// DELETE /api/reports/schedules/:id
+router.delete("/reports/schedules/:id", (req, res) => {
+  try {
+    reportEngine.removeSchedule(req.params.id);
+    return res.json({ message: "Schedule removed" });
+  } catch (err) {
+    logger.error({ err }, "Remove schedule error");
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// ── Delivery Routes ──────────────────────────────────────────────────────
+
+// POST /api/reports/deliver
+router.post("/reports/deliver", async (req, res) => {
+  try {
+    const { reportId, scanId, category, formats, downloadUrls, summary, criticalCount, highCount, totalFindings, riskScore } = req.body;
+
+    const payload = {
+      reportId: reportId ?? "unknown",
+      scanId: scanId ?? 0,
+      target: req.body.target ?? "Unknown",
+      category: category ?? "technical",
+      formats: formats ?? ["html"],
+      downloadUrls: downloadUrls ?? [],
+      summary: summary ?? "Security report generated by V8 Platform.",
+      criticalCount: criticalCount ?? 0,
+      highCount: highCount ?? 0,
+      totalFindings: totalFindings ?? 0,
+      riskScore: riskScore ?? 100,
+      generatedAt: new Date().toISOString(),
+    };
+
+    const results = await reportDelivery.deliver(payload);
+    return res.json({ delivered: results.filter(r => r.success).length, failed: results.filter(r => !r.success).length, results });
+  } catch (err) {
+    logger.error({ err }, "Deliver report error");
+    return res.status(500).json({ error: "Delivery failed" });
+  }
+});
+
+// GET /api/reports/delivery/config
+router.get("/reports/delivery/config", (_req, res) => {
+  const configs = reportDelivery.getEnabledDeliveries();
+  return res.json(configs.map(c => ({ type: c.type, enabled: c.enabled })));
+});
+
+// ── Engine Status ────────────────────────────────────────────────────────
+
+// GET /api/reports/engine/status
+router.get("/reports/engine/status", (_req, res) => {
+  const status = reportEngine.getStatus();
+  return res.json(status);
+});
+
+// POST /api/reports/engine/clear-cache
+router.post("/reports/engine/clear-cache", (_req, res) => {
+  reportEngine.clearAiCache();
+  return res.json({ message: "AI report content cache cleared" });
+});
+
+// ── DELETE /api/reports/:id ──────────────────────────────────────────────
+
+router.delete("/reports/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+  try {
+    await db.delete(reportsTable).where(eq(reportsTable.id, id));
+    return res.json({ message: "Report deleted" });
+  } catch (err) {
+    logger.error({ err }, "Delete report error");
+    return res.status(500).json({ error: "Internal error" });
+  }
+});
+
+// ── GET /api/reports/:id/compare/:otherId ────────────────────────────────
+
+router.get("/reports/:id/compare/:otherId", async (req, res) => {
+  const id = parseInt(req.params.id);
+  const otherId = parseInt(req.params.otherId);
+  if (isNaN(id) || isNaN(otherId)) return res.status(400).json({ error: "Invalid IDs" });
+
+  try {
+    const [report1] = await db.select().from(reportsTable).where(eq(reportsTable.id, id));
+    const [report2] = await db.select().from(reportsTable).where(eq(reportsTable.id, otherId));
+
+    if (!report1 || !report2) return res.status(404).json({ error: "Report not found" });
+
+    const data1 = await collectReportData(report1.scanId);
+    const data2 = await collectReportData(report2.scanId);
+
+    const diff = {
+      findingsDelta: data1.totalFindings - data2.totalFindings,
+      criticalDelta: (data1.severities.critical ?? 0) - (data2.severities.critical ?? 0),
+      highDelta: (data1.severities.high ?? 0) - (data2.severities.high ?? 0),
+      mediumDelta: (data1.severities.medium ?? 0) - (data2.severities.medium ?? 0),
+      newFindings: data1.findings.filter(f => !data2.findings.some(f2 => f2.url === f.url && f2.title === f.title)).map(f => f.title),
+      resolvedFindings: data2.findings.filter(f => !data1.findings.some(f2 => f2.url === f.url && f2.title === f.title)).map(f => f.title),
+    };
+
+    return res.json({
+      scan1: { id: report1.id, scanId: report1.scanId, generatedAt: report1.createdAt.toISOString(), findings: data1.totalFindings, severities: data1.severities },
+      scan2: { id: report2.id, scanId: report2.scanId, generatedAt: report2.createdAt.toISOString(), findings: data2.totalFindings, severities: data2.severities },
+      diff,
+    });
+  } catch (err) {
+    logger.error({ err }, "Compare reports error");
+    return res.status(500).json({ error: "Comparison failed" });
   }
 });
 

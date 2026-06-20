@@ -45,6 +45,28 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: "hidden",
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/scheduler/')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@radix-ui/')) {
+            return 'vendor-radix';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-icons';
+          }
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/framer-motion') || id.includes('node_modules/date-fns') || id.includes('node_modules/cmdk') || id.includes('node_modules/embla-carousel')) {
+            return 'vendor-extra';
+          }
+          if (id.includes('node_modules/@tanstack') || id.includes('node_modules/zustand') || id.includes('node_modules/@tanstack')) {
+            return 'vendor-query';
+          }
+        },
+      },
+    },
   },
   server: {
     port,

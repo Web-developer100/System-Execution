@@ -1,15 +1,16 @@
 import { useGetScans, useStopScan, useDeleteScan, getGetScansQueryKey, useCreateScan, useGetScanLogs, getGetScanLogsQueryKey } from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
-import { Shield, Square, Trash2, Plus, ChevronDown, Terminal } from "lucide-react";
+import { Shield, Square, Trash2, Plus, ChevronDown, Terminal, Wifi, WifiOff } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useScanWs, type ScanWsEvent } from "@/hooks/use-scan-ws";
 
 const AVAILABLE_TOOLS = [
   "subfinder", "naabu", "nuclei", "ffuf", "semgrep", "trivy", "subzy",
@@ -23,29 +24,83 @@ const STATUS_COLORS: Record<string, string> = {
   stopped:   "bg-destructive/15 text-destructive/70 border-destructive/30",
 };
 
+interface LiveLogLine {
+  id: string;
+  ts: string;
+  level: string;
+  message: string;
+}
+
 function ScanLogs({ scanId }: { scanId: number }) {
+  // Poll for historical logs
   const { data: logs } = useGetScanLogs(scanId, {
     query: {
       queryKey: getGetScanLogsQueryKey(scanId),
-      refetchInterval: 3000,
+      refetchInterval: 5000,
     }
   });
+
+  // WebSocket live log stream
+  const [liveLogs, setLiveLogs] = useState<LiveLogLine[]>([]);
+  const wsLifecycle = useRef<(() => void) | null>(null);
+
+  const { addListener } = useScanWs();
+
+  useEffect(() => {
+    setLiveLogs([]); // Reset when scanId changes
+
+    const unsub = addListener("scan:log", (event: ScanWsEvent) => {
+      if (event.scanId !== scanId) return;
+      const data = event.data ?? {};
+      setLiveLogs(prev => {
+        const next: LiveLogLine = {
+          id: `${event.timestamp}-${Math.random().toString(36).slice(2, 6)}`,
+          ts: event.timestamp ? event.timestamp.substring(11, 19) : "--:--:--",
+          level: (data.level as string) ?? "info",
+          message: (data.message as string) ?? "",
+        };
+        const updated = [...prev, next];
+        return updated.length > 100 ? updated.slice(-100) : updated;
+      });
+    });
+
+    wsLifecycle.current = unsub;
+    return () => {
+      unsub();
+      wsLifecycle.current = null;
+    };
+  }, [scanId, addListener]);
 
   const logColors: Record<string, string> = {
     info: "text-primary",
     success: "text-green-400",
     warn: "text-yellow-400",
     error: "text-destructive",
+    debug: "text-primary/50",
   };
 
+  // Merge historical + live logs, dedup by message+time proximity
+  const historicalLogs = (logs ?? []).map(l => ({
+    id: `db-${l.id}`,
+    ts: new Date(l.timestamp).toISOString().substring(11, 19),
+    level: l.level,
+    message: l.message,
+  }));
+
+  // Merge: show historical logs first, then append live logs as they arrive
+  // The historical logs provide the backlog, live logs add real-time entries
+  const allLogs = liveLogs.length > 0
+    ? [...historicalLogs, ...liveLogs]
+    : historicalLogs;
+
   return (
-    <div className="bg-black border border-primary/20 p-3 mt-3 h-36 overflow-y-auto font-mono text-[11px] space-y-0.5">
-      {!logs?.length ? (
-        <div className="text-primary/40">AWAITING LOG OUTPUT...</div>
+    <div className="bg-black border border-primary/20 p-3 mt-3 h-44 overflow-y-auto font-mono text-[11px] space-y-0.5">
+      {!allLogs.length ? (
+        <div className="text-primary/40 animate-pulse">AWAITING LOG OUTPUT...</div>
       ) : (
-        logs.map(log => (
+        allLogs.map(log => (
           <div key={log.id} className={logColors[log.level] || "text-primary"}>
-            <span className="text-primary/30 mr-2">{new Date(log.timestamp).toISOString().substring(11, 19)}</span>
+            <span className="text-primary/30 mr-2">{log.ts}</span>
             {log.message}
           </div>
         ))

@@ -1,0 +1,17 @@
+apiVersion: v1
+appVersion: "1.0.0"
+description: "V8 Neural Exploitation Platform — Enterprise Offensive Security Platform"
+name: v8platform
+version: 1.0.0
+home: https://v8platform.io
+sources:
+  - https://github.com/v8platform/v8-platform
+maintainers:
+  - name: "V8 Platform Team"
+    email: "dev@v8platform.io"
+icon: https://raw.githubusercontent.com/v8platform/branding/main/shield-icon.png
+keywords:
+  - security
+  - vulnerability-scanner
+  - offensive-security
+  - penetration-testing

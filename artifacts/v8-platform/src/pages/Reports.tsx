@@ -9,6 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
+const FORMATS = [
+  { value: "html", label: "HTML", desc: "Interactive web report" },
+  { value: "pdf", label: "PDF", desc: "Downloadable document" },
+  { value: "sarif", label: "SARIF", desc: "Static analysis format" },
+  { value: "json", label: "JSON", desc: "Machine-readable data" },
+  { value: "csv", label: "CSV", desc: "Spreadsheet export" },
+];
+
 const STATUS_CONFIG = {
   ready:      { color: "text-primary border-primary bg-primary/10", pulse: false },
   generating: { color: "text-yellow-400 border-yellow-500/50 bg-yellow-500/5", pulse: true },
@@ -26,16 +34,25 @@ export default function Reports() {
   const { toast } = useToast();
 
   const [selectedScanId, setSelectedScanId] = useState<string>("");
+  const [selectedFormats, setSelectedFormats] = useState<string[]>(["html"]);
+  const [formatExpanded, setFormatExpanded] = useState(false);
+
+  const toggleFormat = (fmt: string) => {
+    setSelectedFormats(prev =>
+      prev.includes(fmt) ? prev.filter(f => f !== fmt) : [...prev, fmt]
+    );
+  };
 
   const handleGenerate = () => {
     if (!selectedScanId || selectedScanId === "__none") return;
     generateMut.mutate(
-      { data: { scanId: parseInt(selectedScanId) } },
+      { data: { scanId: parseInt(selectedScanId), formats: selectedFormats } } as any,
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetReportsQueryKey() });
           setSelectedScanId("");
-          toast({ title: "REPORT INITIATED", description: "Building executive summary and vulnerability analysis..." });
+          setSelectedFormats(["html"]);
+          toast({ title: "REPORT INITIATED", description: `Generating ${selectedFormats.join(", ").toUpperCase()} format(s)...` });
         },
         onError: () => {
           toast({ title: "GENERATION FAILED", variant: "destructive" });
@@ -64,10 +81,41 @@ export default function Reports() {
         <div className="flex items-center gap-2 text-primary glow-text text-sm uppercase tracking-widest mb-1">
           <FilePlus2 className="w-4 h-4" />
           {t('reports.generate_title')}
-        </div>
-        <p className="text-[11px] text-primary/30 font-mono mb-4">
-          Executive Summary → Severity Chart → Tool Scope Matrix → Vulnerability Details + AI Patches
-        </p>
+        </div>          <p className="text-[11px] text-primary/30 font-mono mb-4">
+            Executive Summary → Severity Chart → Tool Scope Matrix → Vulnerability Details + AI Patches
+          </p>
+
+          {/* Format Selector */}
+          <div className="mb-4">
+            <div
+              className="flex items-center gap-2 text-[11px] font-mono text-primary/50 cursor-pointer hover:text-primary/70 transition-colors"
+              onClick={() => setFormatExpanded(!formatExpanded)}
+            >
+              <span className="uppercase tracking-wider">Output Formats</span>
+              <span className="text-[10px] text-primary/30">({selectedFormats.length} selected)</span>
+            </div>
+            {formatExpanded && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {FORMATS.map((fmt) => {
+                  const isSelected = selectedFormats.includes(fmt.value);
+                  return (
+                    <button
+                      key={fmt.value}
+                      onClick={() => toggleFormat(fmt.value)}
+                      className={`px-3 py-2 text-[10px] font-mono uppercase tracking-wider border transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-primary/20 text-primary/40 hover:border-primary/40"
+                      }`}
+                      title={fmt.desc}
+                    >
+                      {fmt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         <div className="flex flex-wrap gap-3 items-end">
           <div className="flex-1 min-w-[200px] space-y-1.5">
             <label className="text-[11px] uppercase tracking-wider text-primary/50 font-mono">{t('reports.select_scan')}</label>
