@@ -21,7 +21,7 @@ import NotificationsPage from "@/pages/Notifications";
 import ObservabilityDashboard from "@/pages/ObservabilityDashboard";
 import AuditLogs from "@/pages/AuditLogs";
 import Scheduling from "@/pages/Scheduling";
-import { useAuth } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,14 +79,16 @@ function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
-        <I18nProvider>
-          <TooltipProvider>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-              <Router />
-            </WouterRouter>
-            <Toaster />
-          </TooltipProvider>
-        </I18nProvider>
+        <AuthProvider>
+          <I18nProvider>
+            <TooltipProvider>
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <Router />
+              </WouterRouter>
+              <Toaster />
+            </TooltipProvider>
+          </I18nProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

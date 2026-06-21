@@ -1,15 +1,47 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 
-export function useAuth() {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("v8_token"));
+interface AuthContextType {
+  token: string | null;
+  setToken: (token: string | null) => void;
+  logout: () => void;
+  isAuthenticated: boolean;
+}
 
-  useEffect(() => {
-    if (token) {
-      localStorage.setItem("v8_token", token);
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [token, setTokenState] = useState<string | null>(() => localStorage.getItem("v8_token"));
+
+  const setToken = (newToken: string | null) => {
+    setTokenState(newToken);
+    if (newToken) {
+      localStorage.setItem("v8_token", newToken);
     } else {
       localStorage.removeItem("v8_token");
     }
-  }, [token]);
+  };
 
-  return { token, setToken, isAuthenticated: !!token };
+  const logout = () => setToken(null);
+
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key === "v8_token") {
+        setTokenState(e.newValue);
+      }
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ token, setToken, logout, isAuthenticated: !!token }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth(): AuthContextType {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  return ctx;
 }

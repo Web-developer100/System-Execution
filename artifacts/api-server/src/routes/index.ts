@@ -16,12 +16,14 @@ import wordlistRouter from "./wordlist";
 import auditRouter from "./audit";
 import schedulingRouter from "./scheduling";
 import usersRouter from "./users";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use(authRouter);
 router.use(usersRouter);
+router.use(notificationsRouter);
 router.use(scansRouter);
 router.use(toolsRouter);
 router.use(proxiesRouter);
