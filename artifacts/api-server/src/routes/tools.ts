@@ -15,6 +15,29 @@ import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
+// Auto-classify tool by name when category is missing
+const TOOL_CATEGORY_MAP: Record<string, string> = {
+  nuclei: "scanner", subfinder: "recon", nmap: "network", httpx: "recon",
+  ffuf: "fuzzer", sqlmap: "exploit", dalfox: "scanner", naabu: "network",
+  feroxbuster: "fuzzer", dirsearch: "fuzzer", gobuster: "fuzzer",
+  semgrep: "sast", trivy: "container", grype: "container", syft: "sbom",
+  amass: "recon", katana: "crawler", hakrawler: "crawler",
+  trufflehog: "secrets", gitleaks: "secrets", nikto: "scanner",
+  rustscan: "network", masscan: "network", subzy: "scanner",
+  paramspider: "recon", arjun: "recon", rengine: "platform", afrog: "scanner",
+  wafw00f: "recon", whatweb: "recon", wfuzz: "fuzzer", commix: "exploit",
+  burpsuite: "scanner", openvas: "scanner", nessus: "scanner",
+};
+
+function inferCategory(name: string, existing: string | null): string {
+  if (existing) return existing;
+  const lower = name.toLowerCase();
+  for (const [key, cat] of Object.entries(TOOL_CATEGORY_MAP)) {
+    if (lower.includes(key)) return cat;
+  }
+  return "scanner";
+}
+
 function formatTool(tool: typeof toolsTable.$inferSelect) {
   return {
     id: tool.id,
@@ -24,6 +47,9 @@ function formatTool(tool: typeof toolsTable.$inferSelect) {
     status: tool.status,
     version: tool.version ?? null,
     language: tool.language ?? null,
+    category: inferCategory(tool.name, tool.category),
+    author: tool.author ?? null,
+    license: tool.license ?? null,
     localPath: tool.localPath ?? null,
     defaultBranch: tool.defaultBranch ?? null,
     installedCommit: tool.installedCommit ?? null,
@@ -35,7 +61,7 @@ function formatTool(tool: typeof toolsTable.$inferSelect) {
     installCompletedAt: tool.installCompletedAt?.toISOString() ?? null,
     lastUpdateMessage: tool.lastUpdateMessage ?? null,
     lastChecked: tool.lastChecked?.toISOString() ?? null,
-    healthScore: tool.healthScore ?? null,
+    healthScore: tool.healthScore ?? 100,
   };
 }
 

@@ -1,1 +1,2 @@
 - [V8 Platform Auth](v8-platform-auth.md) — Simple base64 token auth; admin=admin/admin123; token key in localStorage is "v8_token"
+- [V8 Platform Data](v8-platform-data.md) — DB seed state, tool categories, vulnerability enrichment, schedule seeding

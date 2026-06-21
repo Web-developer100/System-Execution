@@ -1,4 +1,4 @@
-import { useGetScans, useStopScan, useDeleteScan, getGetScansQueryKey, useCreateScan, useGetScanLogs, getGetScanLogsQueryKey } from "@workspace/api-client-react";
+import { useGetScans, useStopScan, useDeleteScan, getGetScansQueryKey, useCreateScan, useGetScanLogs, getGetScanLogsQueryKey, useGetTools } from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
 import { Shield, Square, Trash2, Plus, ChevronDown, Terminal, Wifi, WifiOff } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,9 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useScanWs, type ScanWsEvent } from "@/hooks/use-scan-ws";
 
-const AVAILABLE_TOOLS = [
-  "subfinder", "naabu", "nuclei", "ffuf", "semgrep", "trivy", "subzy",
-];
+const FALLBACK_TOOLS = ["subfinder", "naabu", "nuclei", "ffuf", "semgrep", "trivy", "subzy"];
 
 const STATUS_COLORS: Record<string, string> = {
   running:   "bg-primary/15 text-primary border-primary glow-box",
@@ -117,12 +115,18 @@ export default function Scans() {
       refetchInterval: 5000,
     }
   });
+  const { data: toolsData } = useGetTools();
   const stopMut = useStopScan();
   const deleteMut = useDeleteScan();
   const createMut = useCreateScan();
   const queryClient = useQueryClient();
   const { t } = useI18n();
   const { toast } = useToast();
+
+  // Use real tools from API; fall back to static list while loading
+  const availableTools = toolsData && toolsData.length > 0
+    ? toolsData.map(t => t.name.toLowerCase())
+    : FALLBACK_TOOLS;
 
   const [target, setTarget] = useState("");
   const [selectedTools, setSelectedTools] = useState<string[]>(["nuclei", "subfinder"]);
@@ -204,8 +208,8 @@ export default function Scans() {
               </div>
               <div className="space-y-3">
                 <label className="text-xs uppercase tracking-wider text-primary/60">{t('scans.tools_label')}</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {AVAILABLE_TOOLS.map(tool => (
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {availableTools.map(tool => (
                     <div key={tool} className="flex items-center gap-2 border border-primary/10 px-3 py-2 hover:border-primary/30 transition-colors">
                       <Checkbox
                         id={`tool-${tool}`}

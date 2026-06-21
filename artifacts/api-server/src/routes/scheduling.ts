@@ -147,6 +147,73 @@ function startScheduleChecker(): void {
   }, 30_000);
 }
 
+// ── Seed default schedules (demo data) ───────────────────────────────────
+function seedDefaultSchedules(): void {
+  if (schedules.size > 0) return;
+
+  const defaults: ScheduleDefinition[] = [
+    {
+      id: "sched-001",
+      name: "Daily Production Sweep",
+      target: "https://example.com",
+      tools: ["nuclei", "httpx", "subfinder"],
+      cron: "0 0 * * *",
+      enabled: true,
+      useProxy: false,
+      lastRun: new Date(Date.now() - 86_400_000),
+      nextRun: calculateNextRun("0 0 * * *"),
+      createdAt: new Date(Date.now() - 7 * 86_400_000),
+      totalRuns: 7,
+    },
+    {
+      id: "sched-002",
+      name: "Weekly API Security Test",
+      target: "https://api.corp.net",
+      tools: ["nuclei", "sqlmap", "httpx", "ffuf"],
+      cron: "0 0 * * 1",
+      enabled: true,
+      useProxy: true,
+      lastRun: new Date(Date.now() - 7 * 86_400_000),
+      nextRun: calculateNextRun("0 0 * * 1"),
+      createdAt: new Date(Date.now() - 30 * 86_400_000),
+      totalRuns: 4,
+    },
+    {
+      id: "sched-003",
+      name: "Continuous Recon — Staging",
+      target: "https://staging.app.io",
+      tools: ["subfinder", "naabu", "httpx"],
+      cron: "0 */6 * * *",
+      enabled: true,
+      useProxy: false,
+      lastRun: new Date(Date.now() - 6 * 3_600_000),
+      nextRun: calculateNextRun("0 */6 * * *"),
+      createdAt: new Date(Date.now() - 14 * 86_400_000),
+      totalRuns: 56,
+    },
+    {
+      id: "sched-004",
+      name: "Monthly Compliance Audit",
+      target: "https://intranet.corp.net",
+      tools: ["nuclei", "nikto", "trivy"],
+      cron: "0 0 1 * *",
+      enabled: false,
+      useProxy: false,
+      lastRun: new Date(Date.now() - 30 * 86_400_000),
+      nextRun: null,
+      createdAt: new Date(Date.now() - 60 * 86_400_000),
+      totalRuns: 2,
+    },
+  ];
+
+  for (const s of defaults) {
+    schedules.set(s.id, s);
+  }
+  logger.info({ count: defaults.length }, "[SCHEDULING] Default schedules seeded");
+}
+
+seedDefaultSchedules();
+
 // Auto-start the checker
 startScheduleChecker();
 

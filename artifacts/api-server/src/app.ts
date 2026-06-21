@@ -28,6 +28,10 @@ if (!jwtSecret || jwtSecret === "v8-platform-dev-secret-change-in-production") {
 
 const app: Express = express();
 
+// Trust the first proxy hop (Replit reverse proxy). Required so that
+// express-rate-limit can read X-Forwarded-For without throwing ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+app.set("trust proxy", 1);
+
 // ── Pre-Boot: Configure Go/Rust environment variables ───────────────────────
 // Map structural variables into process.env so built tools are immediately
 // discoverable by the toolchain resolver and subprocess executors.

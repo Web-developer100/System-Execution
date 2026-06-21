@@ -184,14 +184,19 @@ export default function Reports() {
                   </div>
 
                   <div className="space-y-1 mb-4 font-mono">
-                    <div className="text-[10px] text-primary/30 uppercase tracking-widest">
-                      {t('reports.report_id')}: {report.id.toString().padStart(4, "0")}
+                    <div className="flex items-center gap-2 text-[10px] text-primary/30 uppercase tracking-widest">
+                      <span>{t('reports.report_id')}: {report.id.toString().padStart(4, "0")}</span>
+                      {(report as any).type && (
+                        <span className="px-1.5 py-0.5 border border-primary/20 text-primary/50 rounded-sm">
+                          {(report as any).type}
+                        </span>
+                      )}
                     </div>
                     <div className="text-sm text-primary font-bold">
-                      {scanData?.target ?? `${t('reports.scan_target')} #${report.scanId}`}
+                      {(report as any).title ?? scanData?.target ?? `${t('reports.scan_target')} #${report.scanId}`}
                     </div>
                     <div className="text-[11px] text-primary/30">
-                      {new Date(report.createdAt).toLocaleString()}
+                      {scanData ? `→ ${scanData.target}` : `Scan #${report.scanId}`} · {new Date(report.createdAt).toLocaleString()}
                     </div>
                   </div>
 

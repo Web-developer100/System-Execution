@@ -27,9 +27,10 @@ const standardResponse = (_req: Request, res: Response) => {
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // dev: generous limit for development
+  max: 200, // generous limit for development
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false }, // disable X-Forwarded-For validation (Replit proxy)
   message: undefined, // use handler below
   handler: (_req: Request, res: Response) => {
     res.status(429).json({
@@ -44,9 +45,10 @@ export const authLimiter = rateLimit({
 
 export const heavyLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 10,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   handler: standardResponse,
 });
 
@@ -54,9 +56,10 @@ export const heavyLimiter = rateLimit({
 
 export const generalLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 60,
+  max: 300,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   handler: standardResponse,
 });
 
@@ -64,9 +67,10 @@ export const generalLimiter = rateLimit({
 
 export const wsLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 10, // max 10 WS connections per minute per IP
+  max: 50,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
   handler: (_req: Request, res: Response) => {
     res.status(429).json({ error: "Too Many WebSocket Connections" });
   },

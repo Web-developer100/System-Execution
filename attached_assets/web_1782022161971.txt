@@ -1,0 +1,3626 @@
+Part 1 — Vision, Mission, Objectives & Global Requirements
+________________________________________
+ROLE
+You are a world-class Principal Software Architect, Cybersecurity Engineer, DevSecOps Engineer, Offensive Security Specialist, AI Systems Architect, UX/UI Designer, Backend Architect, Frontend Architect, Database Architect, Infrastructure Engineer, Cloud Architect, Kubernetes Engineer, Docker Expert, Site Reliability Engineer (SRE), and Machine Learning Engineer.
+Your mission is to design and build a real, production-ready, enterprise-grade AI-powered Offensive Security Platform.
+This platform is NOT a demo.
+This platform is NOT a simulation.
+This platform must perform real vulnerability assessments using real security tools running inside isolated environments.
+The final system must be scalable enough to support thousands of security tools and enterprise customers.
+
+PRIMARY OBJECTIVE
+Build an advanced AI-powered Vulnerability Assessment Platform inspired by:
+•	OWASP ZAP 
+•	Burp Suite Enterprise 
+•	Invicti 
+•	Nessus 
+•	Qualys VMDR 
+•	Rapid7 InsightVM 
+•	Acunetix 
+•	OpenVAS 
+•	Detectify 
+•	Pentera 
+However...
+The final platform must be significantly more advanced.
+It must combine:
+•	Real Scanning 
+•	AI 
+•	Automation 
+•	Tool Orchestration 
+•	Plugin System 
+•	Enterprise Reporting 
+•	False Positive Elimination 
+•	Automatic Patch Suggestions 
+•	Distributed Scanning 
+into one unified platform.
+
+ABSOLUTE REQUIREMENTS
+The platform MUST NOT:
+•	simulate scans 
+•	generate fake vulnerabilities 
+•	create fictional reports 
+•	invent findings 
+•	estimate vulnerabilities without verification 
+Instead:
+Every vulnerability must be discovered using real tools.
+Every finding must be verified.
+Every report must reflect real scan results.
+
+CORE PHILOSOPHY
+Accuracy is more important than speed.
+Verification is more important than detection.
+Evidence is more important than assumptions.
+AI assists human decision making.
+The platform never lies.
+If a vulnerability cannot be verified,
+it must never be reported as confirmed.
+
+PLATFORM GOALS
+The platform should be capable of:
+• Full Website Assessment
+• API Security Testing
+• GraphQL Security Testing
+• Cloud Asset Assessment
+• Container Security
+• Kubernetes Security
+• External Attack Surface Discovery
+• Continuous Security Monitoring
+• Scheduled Assessments
+• AI Risk Analysis
+• Executive Reporting
+• Technical Reporting
+• Developer Remediation Guidance
+
+ENTERPRISE LEVEL QUALITY
+Everything produced must follow enterprise standards.
+No shortcuts.
+No placeholders.
+No mocked functionality.
+No hardcoded data.
+No fake APIs.
+No pseudo logic.
+Everything must be production ready.
+
+PRODUCTION READY REQUIREMENTS
+Every component must include:
+Error Handling
+Retry Logic
+Logging
+Monitoring
+Metrics
+Health Checks
+Validation
+Security
+Testing
+Documentation
+Performance Optimization
+Scalability
+Maintainability
+Observability
+
+SOFTWARE ENGINEERING PRINCIPLES
+The entire platform must follow:
+Clean Architecture
+SOLID Principles
+DRY
+KISS
+YAGNI
+Repository Pattern
+Service Layer Pattern
+Dependency Injection
+CQRS where appropriate
+Domain Driven Design (DDD)
+Hexagonal Architecture when beneficial
+Modular Design
+Microservice-ready Architecture
+Event-Driven Architecture
+High Cohesion
+Low Coupling
+
+PERFORMANCE GOALS
+Support:
+10 concurrent scans
+100 concurrent scans
+1000 concurrent scans
+Horizontal Scaling
+Distributed Workers
+Load Balancing
+Queue Processing
+Background Jobs
+Streaming Results
+Real-time Updates
+
+SECURITY FIRST
+The platform itself must be secure.
+Protect against:
+Command Injection
+RCE
+Path Traversal
+CSRF
+SSRF
+SQL Injection
+NoSQL Injection
+Prototype Pollution
+XXE
+Open Redirect
+XSS
+Clickjacking
+Broken Authentication
+Privilege Escalation
+Race Conditions
+Directory Traversal
+Unsafe Deserialization
+Template Injection
+Secrets Exposure
+File Upload Abuse
+API Abuse
+Mass Assignment
+Rate Limit Bypass
+Authentication Bypass
+Session Hijacking
+
+COMPLIANCE
+Support:
+OWASP Top 10
+OWASP ASVS
+OWASP API Top 10
+CWE
+CAPEC
+MITRE ATT&CK
+MITRE D3FEND
+CVSS v4
+EPSS
+CVE
+CISA KEV
+PCI DSS
+ISO 27001
+NIST Cybersecurity Framework
+SOC2
+
+REAL SCANNING ONLY
+The platform must perform:
+Real Reconnaissance
+Real Crawling
+Real Enumeration
+Real Discovery
+Real Validation
+Real Exploitation Verification
+Real Reporting
+No simulated results.
+
+AI PHILOSOPHY
+Artificial Intelligence must never replace scanners.
+Instead,
+AI must enhance them.
+AI responsibilities include:
+Correlation
+Explanation
+Prioritization
+Verification Assistance
+Remediation
+Risk Scoring
+Business Impact Analysis
+Patch Generation
+False Positive Filtering
+Attack Chain Discovery
+Threat Prediction
+Scan Optimization
+Learning from historical scans
+
+USER EXPERIENCE GOALS
+The platform should feel like a premium commercial enterprise product.
+Fast.
+Responsive.
+Beautiful.
+Minimalistic.
+Modern.
+Dark Mode by default.
+Professional animations.
+Enterprise dashboard.
+Real-time scan visualization.
+Live metrics.
+Interactive reports.
+Professional charts.
+Responsive across desktop, tablet and mobile.
+
+EXTENSIBILITY
+The system must be designed from day one to support:
+100 tools
+500 tools
+1000 tools
+5000 tools
+Without modifying the core platform.
+Everything must be plugin-based.
+No tool-specific code should exist inside the core engine.
+
+
+Part 2 — Enterprise System Architecture
+SYSTEM ARCHITECTURE
+The platform MUST be designed as an enterprise-grade modular architecture.
+Every major component must be independent.
+Every service must be replaceable.
+Every module must communicate through secure APIs or an internal event bus.
+The architecture must be scalable horizontally and vertically.
+The system must support cloud deployment, on-premises deployment, hybrid deployment, and air-gapped environments.
+
+HIGH LEVEL ARCHITECTURE
+Design the platform using the following core services:
+                    Users
+                      │
+                      ▼
+               Frontend Dashboard
+                      │
+                      ▼
+                API Gateway
+                      │
+     ┌────────────────────────────────────┐
+     │                                    │
+     ▼                                    ▼
+Authentication                    Project Service
+     │                                    │
+     └──────────────┬─────────────────────┘
+                    ▼
+             Scan Orchestrator
+                    │
+ ┌─────────────────────────────────────────────────────────┐
+ │                                                         │
+ ▼                                                         ▼
+Plugin Manager                                   AI Intelligence Engine
+ │                                                         │
+ ▼                                                         ▼
+Tool Registry                                  Verification Engine
+ │                                                         │
+ ▼                                                         ▼
+Docker Sandbox Manager                      False Positive Filter
+ │                                                         │
+ ▼                                                         ▼
+Dependency Manager                           Patch Generator
+ │                                                         │
+ ▼                                                         ▼
+Queue System                                  Report Engine
+ │                                                         │
+ ▼                                                         ▼
+Distributed Workers                        Notification Service
+ │                                                         │
+ ▼                                                         ▼
+Monitoring Service                           Audit Logs
+                    │
+                    ▼
+               PostgreSQL
+                    │
+                    ▼
+                 Redis Queue
+                    │
+                    ▼
+                 Object Storage
+
+CORE SERVICES
+The platform must be divided into the following independent services.
+
+API Gateway
+Responsibilities:
+•	Route requests 
+•	JWT Validation 
+•	Rate Limiting 
+•	API Versioning 
+•	Authentication 
+•	Authorization 
+•	Request Logging 
+•	Request Validation 
+•	CORS 
+•	Security Headers 
+•	Load Balancing 
+
+Authentication Service
+Support:
+JWT
+OAuth2
+OpenID Connect
+SSO
+Google Login
+GitHub Login
+Microsoft Login
+LDAP
+SAML
+Multi-Factor Authentication
+Session Management
+Refresh Tokens
+Password Policies
+Device Management
+Organization Service
+Support
+Organizations
+Projects
+Departments
+Workspaces
+Teams
+Members
+Roles
+Permissions
+Billing Ready
+Multi Tenant
+Complete isolation between organizations.
+Project Service
+Every scan belongs to a project.
+Every project contains
+Targets
+Assets
+Credentials
+Reports
+History
+Schedules
+Notifications
+Risk Scores
+
+Scan Orchestrator ⭐⭐⭐⭐⭐
+This is the brain of the platform.
+It is responsible for:
+Planning scans
+Selecting tools
+Scheduling execution
+Monitoring execution
+Collecting outputs
+Retry failed jobs
+Dependency resolution
+Workflow generation
+Parallel execution
+Result aggregation
+Failure recovery
+Dynamic optimization
+AI-assisted decision making
+Automatic tool sequencing
+Automatic pipeline generation
+Dynamic workload balancing
+
+The orchestrator must never hardcode tool execution.
+Everything must be driven by metadata.
+
+Plugin Manager ⭐⭐⭐⭐⭐
+The platform must support unlimited plugins.
+Plugins can be added without restarting the system.
+Plugins can be enabled or disabled independently.
+Plugins must be hot-loadable.
+Each plugin contains
+Plugin Name
+Description
+Category
+Author
+Version
+Git Repository
+Language
+Dependencies
+Install Commands
+Build Commands
+Run Commands
+Docker Image
+Capabilities
+Input Types
+Output Types
+Verification Methods
+Health Check
+Update Policy
+AI Rules
+Resource Limits
+Security Profile
+
+Tool Registry
+The platform must maintain a registry of every installed tool.
+Each record stores
+Tool ID
+Repository URL
+GitHub Metadata
+Language
+Version
+Current Commit
+Latest Commit
+Release
+Author
+License
+Installation Status
+Update Status
+Docker Image
+Health Status
+Risk Coverage
+Execution Time
+Average Accuracy
+False Positive Rate
+CPU Usage
+RAM Usage
+Dependencies
+Execution Profile
+Sandbox Profile
+Supported Operating Systems
+
+Dynamic Tool Detection ⭐⭐⭐⭐⭐
+When a GitHub repository is added,
+the platform automatically detects
+Python
+Go
+Rust
+NodeJS
+Java
+PHP
+Ruby
+Perl
+C
+C++
+Shell
+Docker
+.NET
+without asking the user.
+
+It detects by analyzing
+requirements.txt
+pyproject.toml
+setup.py
+go.mod
+Cargo.toml
+package.json
+composer.json
+Gemfile
+pom.xml
+build.gradle
+Dockerfile
+Makefile
+README
+GitHub Topics
+GitHub Language API
+Project structure
+
+Dynamic Installation Engine
+The platform installs dependencies automatically.
+Examples
+Python
+python -m venv
+
+pip install -r requirements.txt
+Go
+go mod download
+
+go build
+Rust
+cargo build --release
+NodeJS
+npm install
+
+pnpm install
+
+yarn install
+PHP
+composer install
+Java
+mvn package
+
+gradle build
+Everything happens automatically.
+
+Comprehensive Server Environment Setup ⭐⭐⭐⭐⭐
+On first deployment,
+the platform must automatically verify and install every required development environment and runtime.
+It must install and configure:
+Python 3.x
+pip
+virtualenv
+venv
+Go
+Rust
+Cargo
+NodeJS LTS
+npm
+pnpm
+Yarn
+Java JDK
+Maven
+Gradle
+PHP
+Composer
+Ruby
+Bundler
+Perl
+Git
+Curl
+Wget
+GCC
+G++
+Build Essential
+LLVM
+Clang
+OpenSSL
+Docker
+Docker Compose
+Docker Buildx
+Git LFS
+SQLite
+PostgreSQL Client
+Redis Client
+kubectl
+Helm
+Terraform
+AWS CLI
+Azure CLI
+Google Cloud SDK
+Nmap
+jq
+yq
+zip
+unzip
+tar
+gzip
+Everything must be installed automatically if missing.
+
+Automatic Dependency Resolution
+When installing a tool,
+the platform must automatically detect
+system packages
+language packages
+shared libraries
+runtime requirements
+build dependencies
+missing binaries
+environment variables
+and install them automatically.
+
+
+Plugin SDK
+Provide an SDK that allows developers to create new plugins in minutes.
+Each plugin should follow a standard structure.
+Validation should happen automatically.
+Documentation must be generated automatically.
+
+Automatic Tool Classification
+Every installed tool is automatically categorized.
+Examples
+Web
+API
+Cloud
+Kubernetes
+Network
+Active Directory
+Wireless
+IoT
+Mobile
+OSINT
+Recon
+Crawler
+Scanner
+Fuzzer
+Exploit
+Password
+Secrets
+Container
+CI/CD
+Source Code
+Supply Chain
+AI
+Malware Analysis
+Reverse Engineering
+
+Tool Capability Detection
+Instead of asking the administrator,
+the platform should analyze
+README
+Arguments
+Documentation
+GitHub Topics
+CLI Help
+Source Code
+Execution Behavior
+to determine what the tool can do.
+
+Tool Health Monitoring
+Every tool must continuously be monitored.
+Health status includes
+Installed
+Healthy
+Broken
+Deprecated
+Offline
+Repository Deleted
+Dependency Failure
+Update Available
+Security Warning
+Abandoned Project
+
+Automatic GitHub Update System
+When clicking "Check for Updates"
+the platform must
+Compare commits
+Compare releases
+Compare tags
+Detect breaking changes
+Run git pull
+Rebuild automatically
+Restart containers
+Validate execution
+Rollback automatically if update fails
+Update database
+Refresh UI instantly
+
+
+Part 3 — AI Intelligence Layer + Verification Engine + Real Scan Pipeline
+
+AI INTELLIGENCE LAYER ⭐⭐⭐⭐⭐
+The platform must include a dedicated AI Intelligence Engine that operates ABOVE all scanning tools.
+This AI does NOT perform scanning.
+Instead, it processes, validates, correlates, and enhances results from real scanning tools only.
+
+CORE RESPONSIBILITIES OF AI ENGINE
+The AI engine must perform the following:
+1. Result Correlation Engine
+The AI must analyze outputs from multiple tools and:
+•	Merge duplicate findings 
+•	Detect overlapping vulnerabilities 
+•	Normalize results into unified format 
+•	Correlate multi-tool evidence 
+•	Build a single “truth model” of vulnerabilities 
+
+2. False Positive Elimination Engine ⭐⭐⭐⭐⭐
+The AI must aggressively filter false positives.
+Rules:
+•	A vulnerability is NEVER confirmed by AI alone 
+•	AI must require evidence from tools 
+•	AI must compare multiple tool outputs 
+•	AI must re-evaluate HTTP requests/responses 
+•	AI must validate reproducibility 
+Output classification:
+•	CONFIRMED 
+•	HIGH CONFIDENCE 
+•	NEEDS VERIFICATION 
+•	FALSE POSITIVE (excluded from report) 
+⚠️ IMPORTANT:
+False positives must NEVER appear in final report as real vulnerabilities.
+
+3. Vulnerability Understanding Engine
+For every confirmed issue, AI must generate:
+•	Technical explanation 
+•	Root cause analysis 
+•	Attack vector explanation 
+•	Exploitability level 
+•	Real-world impact 
+•	Business impact 
+•	Attack complexity 
+•	Preconditions required 
+
+4. AI Risk Scoring Engine ⭐⭐⭐⭐⭐
+Each vulnerability must be scored using:
+•	CVSS v3.1 / v4.0 
+•	EPSS probability 
+•	CWE classification 
+•	MITRE ATT&CK mapping 
+•	Real exploit availability 
+•	Public CVE references 
+Final output:
+•	Severity (Critical / High / Medium / Low / Info) 
+•	Risk Score (0–10) 
+•	Exploit Probability (%) 
+
+5. AI Attack Chain Detection
+The AI must detect chained vulnerabilities such as:
+Example:
+•	XSS → Session Hijacking → Admin Access 
+•	SQL Injection → Data Extraction → RCE 
+•	SSRF → Cloud Metadata Access → Privilege Escalation 
+AI must visualize attack paths.
+
+6. AI Remediation Engine ⭐⭐⭐⭐⭐
+For every confirmed vulnerability:
+AI must generate REAL fixes:
+•	Secure code patches 
+•	Framework-specific fixes 
+•	Configuration fixes 
+•	WAF rules 
+•	Security headers 
+•	Input validation rules 
+Supported languages:
+•	PHP / Laravel 
+•	Python / Django / Flask 
+•	Node.js / Express 
+•	Java / Spring Boot 
+•	C# / ASP.NET 
+•	Go 
+•	Ruby on Rails 
+•	JavaScript / TypeScript 
+AI must provide:
+Before / After code
+Explanation of fix
+Security best practices
+
+7. AI Scan Optimization Engine
+AI must optimize scanning by:
+•	Selecting best tools per target 
+•	Removing redundant tools 
+•	Prioritizing high-value endpoints 
+•	Reducing scan noise 
+•	Improving scan speed 
+•	Avoiding WAF detection when possible (for authorized testing only) 
+
+8. AI Learning Engine
+AI must learn from past scans:
+•	Which tools are most accurate 
+•	Which tools produce noise 
+•	Which vulnerabilities are frequently false positives 
+•	Which scan paths are most effective 
+AI improves future scan pipelines automatically.
+
+REAL SCANNING VERIFICATION ENGINE ⭐⭐⭐⭐⭐
+This is the MOST IMPORTANT rule in the entire system.
+RULE:
+NO vulnerability is valid unless proven.
+
+Verification Process:
+When a tool reports a vulnerability:
+Step 1 — Re-test
+System re-executes the request using:
+•	Different payloads 
+•	Different encoding 
+•	Different parameters 
+
+Step 2 — Cross Tool Validation
+At least one additional tool must confirm it.
+Example:
+•	SQLMap confirms SQLi 
+•	Nuclei validates endpoint behavior 
+•	Custom HTTP engine reproduces result 
+
+Step 3 — Proof of Concept Generation
+AI attempts to generate:
+•	Minimal exploit request 
+•	Reproducible payload 
+•	Safe validation steps 
+
+
+
+Step 4 — Final Decision
+Only if verified:
+✔ Mark as CONFIRMED
+❌ Otherwise discard or mark as unverified
+
+REAL SCAN PIPELINE ENGINE ⭐⭐⭐⭐⭐
+The platform must execute scanning as a multi-stage pipeline.
+
+PIPELINE STAGES:
+1. Reconnaissance
+•	Subdomain enumeration 
+•	DNS discovery 
+•	IP resolution 
+2. Asset Discovery
+•	Services 
+•	Ports 
+•	Cloud assets 
+3. Fingerprinting
+•	CMS detection 
+•	Framework detection 
+•	Server detection 
+4. Crawling
+•	URL discovery 
+•	Endpoint extraction 
+•	JavaScript parsing 
+5. Enumeration
+•	Parameters 
+•	APIs 
+•	Hidden endpoints 
+6. Passive Scanning
+•	Header analysis 
+•	Misconfiguration detection 
+7. Active Scanning
+•	Injection testing 
+•	Auth testing 
+•	Business logic testing 
+8. Deep Scan
+•	Complex payload testing 
+•	Chained attacks 
+9. Verification Layer ⭐⭐⭐⭐⭐
+•	Re-testing 
+•	Cross-tool validation 
+•	PoC generation 
+10. AI Analysis Layer
+•	Risk scoring 
+•	Exploit analysis 
+•	Reporting preparation 
+11. Report Generation
+•	Final structured report 
+
+
+SCAN ORCHESTRATOR (CORE ENGINE) ⭐⭐⭐⭐⭐
+This is the brain of the system.
+It must:
+•	Dynamically build scan workflows 
+•	Decide which tools run and when 
+•	Avoid redundant scanning 
+•	Prioritize high-value targets 
+•	Optimize performance 
+•	Balance system load 
+•	Handle failures gracefully 
+•	Retry failed tools 
+•	Re-route scan pipelines if tool fails 
+
+RULE:
+The orchestrator MUST NEVER hardcode tool execution.
+All execution must be metadata-driven.
+
+TOOL EXECUTION RULE
+Every tool must run inside:
+•	Docker Container (isolated sandbox) 
+•	Limited CPU/RAM 
+•	No access to host system 
+•	Temporary filesystem only 
+•	Auto cleanup after execution 
+
+OUTPUT STANDARDIZATION LAYER
+All tool outputs must be converted into:
+{
+  "vulnerability": "",
+  "severity": "",
+  "confidence": "",
+  "evidence": {
+    "request": "",
+    "response": ""
+  },
+  "source_tool": "",
+  "timestamp": ""
+}
+
+FINAL RULES (CRITICAL)
+•	NO simulated scans 
+•	NO fake vulnerabilities 
+•	NO placeholder results 
+•	NO hallucinated findings 
+•	NO unverified reports 
+•	NO AI-only vulnerabilities 
+
+
+
+
+
+
+SUMMARY OF PART 3
+This part defines:
+✔ AI Intelligence Layer
+✔ False Positive Filtering
+✔ Real Verification Engine
+✔ Multi-Stage Scan Pipeline
+✔ Scan Orchestrator
+✔ Tool Execution Rules
+✔ Output Standardization
+
+PART 4 — REAL SCAN PIPELINE + ORCHESTRATOR + TOOL EXECUTION
+Build a Real Enterprise Scan Orchestrator
+Design a production-grade scan orchestration engine comparable to the architecture used by leading commercial security scanners (Burp Enterprise, Invicti, Qualys, Rapid7, Nessus, Detectify, Acunetix, Microsoft Defender).
+The orchestrator must never rely on a single scanner.
+Instead it must coordinate dozens of independent security tools and combine their results into one intelligent scan.
+Every scan is executed as a workflow consisting of multiple phases.
+Each phase may launch multiple tools in parallel.
+The orchestrator continuously schedules, monitors, retries and validates tasks.
+No scanner should directly call another scanner.
+Everything passes through the orchestration engine.
+
+Complete Scan Pipeline
+Phase 1
+Target Validation
+Verify
+• URL
+• Domain
+• IP
+• CIDR
+• API Endpoint
+• Repository
+• Mobile APK
+• Docker Image
+• Kubernetes Cluster
+• Cloud Account
+Normalize targets.
+Resolve DNS.
+Resolve IPv4/IPv6.
+Verify SSL.
+Collect metadata.
+Detect WAF.
+Detect CDN.
+Detect Reverse Proxy.
+Fingerprint technologies.
+
+Phase 2
+Passive Recon
+Execute passive tools including
+Subfinder
+Amass Passive
+Assetfinder
+Chaos
+crt.sh
+SecurityTrails
+Wayback Machine
+Github Recon
+Shodan
+Censys
+FOFA
+VirusTotal
+BuiltWith
+HTTP Archive
+Certificate Transparency
+ASN Enumeration
+Passive DNS
+Historical DNS
+Historical URLs
+Technology Fingerprinting
+WHOIS
+DNS Records
+Passive API Discovery
+Cloud Enumeration
+Store every discovered asset.
+
+Phase 3
+Active Recon
+Run
+Naabu
+Masscan
+RustScan
+Nmap
+HTTPX
+TLS Scan
+Banner Grabbing
+Reverse DNS
+OS Detection
+Service Detection
+Port Fingerprinting
+Protocol Fingerprinting
+Version Detection
+Store every endpoint.
+
+Phase 4
+Content Discovery
+Execute
+Katana
+Hakrawler
+Gau
+Waybackurls
+Feroxbuster
+FFUF
+Dirsearch
+Gobuster
+ParamSpider
+Arjun
+JS Link Finder
+JavaScript Parser
+GraphQL Discovery
+Swagger Discovery
+API Discovery
+Hidden File Discovery
+Parameter Discovery
+Hidden Endpoint Discovery
+Recursive Crawling
+Recursive Spidering
+Build complete application map.
+
+Phase 5
+Vulnerability Detection
+Launch multiple scanners simultaneously.
+Examples
+Nuclei
+Nessus
+OpenVAS
+Nikto
+OWASP ZAP
+Burp Headless
+SQLMap
+Dalfox
+XSStrike
+Commix
+JWT Toolkit
+SSTI Scanner
+GraphQL Scanner
+SSRF Scanner
+Template Injection Scanner
+XXE Scanner
+LFI Scanner
+RCE Scanner
+Deserialization Scanner
+CRLF Scanner
+Open Redirect Scanner
+Host Header Scanner
+Cache Poisoning Scanner
+Race Condition Scanner
+Business Logic Scanner
+IDOR Scanner
+API Security Scanner
+Cloud Security Scanner
+Kubernetes Scanner
+Docker Scanner
+Secrets Scanner
+Dependency Scanner
+SCA Scanner
+SAST Scanner
+DAST Scanner
+IaC Scanner
+Container Scanner
+SBOM Scanner
+
+Phase 6
+Verification Layer
+Every finding must be verified.
+Repeat exploit.
+Reproduce vulnerability.
+Execute secondary validation.
+Compare with alternative tools.
+Check exploit reliability.
+Collect evidence.
+Generate request.
+Generate response.
+Generate screenshots.
+Collect payload.
+Collect logs.
+Assign confidence score.
+Reject false positives automatically.
+
+Phase 7
+AI Analysis
+Merge findings.
+Cluster duplicates.
+Remove noise.
+Infer attack chains.
+Identify root cause.
+Generate exploit path.
+Generate remediation.
+Estimate business impact.
+Estimate exploitability.
+Predict likelihood.
+Calculate CVSS.
+Calculate EPSS.
+Calculate exploit maturity.
+Calculate risk.
+Generate executive summary.
+Generate developer report.
+Generate technical explanation.
+
+Workflow Engine
+Implement a workflow engine similar to Airflow and Temporal.
+Each task has
+Task ID
+Priority
+Dependencies
+Retry Policy
+Timeout
+Resource Limits
+Cancellation Token
+Progress State
+Execution Logs
+Metrics
+Artifacts
+Screenshots
+Evidence
+Tasks execute asynchronously.
+Independent tasks run in parallel.
+Dependent tasks wait automatically.
+
+Dynamic Scheduler
+The scheduler should intelligently distribute workloads.
+Features
+Priority Queue
+Weighted Scheduling
+Adaptive Scheduling
+Resource Aware Scheduling
+CPU Aware
+Memory Aware
+Network Aware
+GPU Aware
+Region Aware
+Node Health Awareness
+Auto Retry
+Dead Letter Queue
+Rate Limiting
+Concurrency Limits
+Backpressure Handling
+Job Resumption
+Checkpoint Recovery
+
+Tool Execution Engine
+Each scanner runs inside an isolated execution environment.
+Support
+Docker
+Podman
+Kubernetes Jobs
+Firecracker MicroVM
+Remote Workers
+SSH Workers
+Cloud Workers
+Every execution includes
+CPU limits
+Memory limits
+Execution timeout
+Output capture
+Exit code
+Logs
+JSON Output
+Artifacts
+Screenshots
+Temporary storage
+Automatic cleanup
+
+Parallel Execution
+Support thousands of concurrent scans.
+Examples
+100 URLs simultaneously
+1000 APIs simultaneously
+500 Containers simultaneously
+10000 Hosts simultaneously
+Automatically scale workers.
+Balance workloads.
+Recover failed workers.
+Replace unhealthy workers.
+
+Tool Adapters
+Every tool must use a standardized adapter interface.
+Each adapter includes
+Metadata
+Supported Inputs
+Supported Outputs
+Version
+Health Status
+Capabilities
+Required Permissions
+Execution Method
+Parser
+Normalizer
+Evidence Extractor
+Confidence Calculator
+Result Translator
+Every future tool should be installable without changing core code.
+
+Result Normalization
+Convert outputs from all scanners into one unified schema.
+Normalize
+Severity
+Evidence
+CVSS
+Location
+Request
+Response
+Payload
+CWE
+CVE
+OWASP Category
+MITRE ATT&CK
+CAPEC
+References
+Fix Recommendations
+Exploitability
+Confidence
+Business Impact
+Likelihood
+Deduplicate automatically.
+Merge similar findings.
+Link related findings.
+Generate relationships.
+
+Failure Recovery
+The orchestrator must tolerate failures.
+If one tool crashes
+Continue remaining tasks.
+Restart failed workers.
+Retry configurable times.
+Store partial results.
+Resume interrupted scans.
+Prevent duplicate execution.
+Guarantee scan consistency.
+
+Extensibility
+The orchestration layer must allow unlimited future integrations.
+New scanners can be added without modifying existing code.
+Every integration is discovered dynamically through the plugin system.
+No hardcoded scanners.
+No hardcoded workflows.
+Everything must be configurable using YAML or JSON workflow definitions.
+The orchestrator should become the central nervous system of the entire platform.
+
+PART 5 — ENTERPRISE FRONTEND (Professional UI/UX Like Burp Enterprise, Invicti, Microsoft Defender, Qualys & GitHub)
+Objective
+Build a modern enterprise-grade frontend that is visually stunning, extremely responsive, highly scalable, and suitable for SOC teams, penetration testers, bug bounty hunters, DevSecOps engineers, security managers, and enterprise customers.
+The interface must not resemble a simple dashboard. It should feel like a commercial cybersecurity platform used by Fortune 500 companies.
+The design language should combine the best concepts from Burp Suite Enterprise, Invicti, Qualys VMDR, Microsoft Defender XDR, GitHub, Datadog, Grafana, Kibana, Linear, Vercel Dashboard, and Cloudflare.
+Technology Stack
+Use:
+Next.js (Latest)
+React
+TypeScript
+Tailwind CSS
+shadcn/ui
+Radix UI
+Framer Motion
+TanStack Query
+Zustand
+React Hook Form
+Zod
+Recharts
+Monaco Editor
+React Flow
+D3.js
+Socket.IO Client
+Dark/Light Mode
+Responsive Design
+Accessibility (WCAG AA)
+No Bootstrap.
+No jQuery.
+No outdated UI libraries.
+Layout
+Persistent Left Sidebar
+Top Navigation Bar
+Global Search
+Command Palette
+Workspace Switcher
+Notifications Center
+Profile Menu
+Organization Switcher
+Breadcrumb Navigation
+Resizable Panels
+Dockable Widgets
+Floating Quick Actions
+Keyboard Shortcuts
+Context Menus
+Multi-Tab Interface
+Fullscreen Mode
+Compact Mode
+Presentation Mode
+Dashboard
+Display live statistics including:
+Total Assets
+Total Scans
+Running Scans
+Queued Jobs
+Completed Jobs
+Critical Vulnerabilities
+High Vulnerabilities
+Medium Vulnerabilities
+Low Vulnerabilities
+False Positives
+Verified Findings
+Average Scan Duration
+Success Rate
+AI Verification Accuracy
+Worker Status
+CPU Usage
+RAM Usage
+Queue Size
+Plugin Status
+License Status
+Recent Activities
+Threat Trends
+Security Score
+Attack Surface Score
+Risk Trend
+Executive Summary
+Everything updates in real time using WebSockets.
+Asset Management
+Support unlimited assets.
+Group by:
+Organization
+Project
+Environment
+Cloud
+Business Unit
+Tags
+Risk Level
+Technology
+Owner
+Status
+Support:
+Bulk Import
+CSV Import
+API Import
+GitHub Sync
+Cloud Sync
+Auto Discovery
+Smart Search
+Advanced Filters
+Saved Views
+Asset Timeline
+Relationship Graph
+Scan Management
+Users can:
+Create Scan
+Pause Scan
+Resume Scan
+Cancel Scan
+Clone Scan
+Schedule Scan
+Recurring Scan
+Quick Scan
+Deep Scan
+Custom Workflow
+Template Scan
+Bulk Scan
+Multi Target Scan
+Real-time progress bars.
+Estimated completion time.
+Live execution logs.
+Worker allocation view.
+Pipeline visualization.
+Retry failed jobs.
+Vulnerability Center
+Professional vulnerability management interface.
+Each vulnerability contains:
+Title
+Description
+Severity
+Confidence
+CVSS
+EPSS
+CWE
+CVE
+CAPEC
+OWASP Category
+MITRE ATT&CK
+Affected Assets
+Affected Endpoints
+Evidence
+HTTP Requests
+HTTP Responses
+Payload
+Screenshots
+Proof of Concept
+Exploitability
+Business Impact
+Likelihood
+AI Explanation
+Developer Fix
+Executive Summary
+References
+Verification Status
+Duplicate Links
+Related Findings
+Timeline
+Comments
+Attachments
+History
+Audit Trail
+Vulnerability Detail Page
+Professional split-screen interface.
+Left Panel
+Description
+Evidence
+Technical Details
+Timeline
+References
+AI Explanation
+Center Panel
+HTTP Request
+HTTP Response
+Headers
+Cookies
+Payload
+Replay Request
+Modify Request
+Compare Requests
+Right Panel
+AI Remediation
+Patch Suggestions
+Code Examples
+Risk Score
+Related Vulnerabilities
+MITRE Mapping
+OWASP Mapping
+Exploit Prediction
+Real-Time Monitoring
+Live updates for:
+Workers
+Scans
+Assets
+Queue
+Notifications
+Logs
+AI Decisions
+Plugin Installations
+Resource Usage
+Use WebSockets only.
+No manual refresh.
+Interactive Graphs
+Risk Over Time
+Vulnerability Trend
+Severity Distribution
+Asset Growth
+Worker Utilization
+Cloud Resources
+Technology Stack
+Attack Surface
+MITRE Matrix
+OWASP Categories
+Plugin Usage
+Execution Timeline
+Executive Risk Dashboard
+Search System
+Global search across:
+Assets
+Scans
+Vulnerabilities
+Users
+Organizations
+Projects
+Plugins
+Reports
+Logs
+API Keys
+Documentation
+Support fuzzy search.
+Autocomplete.
+Keyboard navigation.
+Saved searches.
+Command Palette
+Ctrl + K
+Quick actions:
+Create Scan
+Search Assets
+Install Plugin
+Generate Report
+Open Settings
+Create User
+Run Workflow
+View Logs
+Open Documentation
+Navigate Anywhere
+Reporting Interface
+Generate:
+PDF
+DOCX
+HTML
+JSON
+CSV
+SARIF
+Executive Report
+Developer Report
+Compliance Report
+OWASP Report
+PCI DSS Report
+ISO 27001 Report
+SOC2 Report
+Custom Report
+Preview before export.
+Brand customization.
+Company logo.
+Themes.
+Notifications Center
+Real-time notifications for:
+Scan Finished
+Worker Offline
+Plugin Updated
+Critical Vulnerability
+AI Verification Completed
+License Warning
+New Asset
+System Alert
+Webhook Delivered
+Integration Failure
+Email Sent
+Slack Message
+Microsoft Teams Alert
+Discord Alert
+Settings
+General
+Organization
+Projects
+Users
+Roles
+Permissions
+Authentication
+SSO
+LDAP
+SAML
+OAuth
+API Keys
+Plugins
+Workers
+Storage
+AI Models
+Email
+Notifications
+Branding
+Audit Logs
+Security
+Backup
+Restore
+Licensing
+User Management
+Organizations
+Teams
+Users
+Roles
+Permissions
+Invitations
+Session Management
+MFA
+Password Policies
+Activity Logs
+Device History
+Login History
+API Tokens
+Plugin Marketplace
+Beautiful marketplace interface.
+Search plugins.
+Install.
+Update.
+Disable.
+Rollback.
+Version History.
+Ratings.
+Documentation.
+Compatibility Checker.
+Dependencies.
+Health Status.
+API Explorer
+Interactive Swagger-like interface.
+Browse endpoints.
+Test requests.
+Generate SDK snippets.
+Authentication helper.
+Request history.
+Example payloads.
+Documentation Center
+Integrated documentation.
+Architecture diagrams.
+API documentation.
+Plugin SDK docs.
+Workflow examples.
+CLI documentation.
+Developer guides.
+Video tutorials.
+Searchable knowledge base.
+Design Requirements
+Glassmorphism where appropriate.
+Smooth animations.
+No excessive effects.
+Consistent spacing.
+Consistent typography.
+Responsive for desktop, tablet, and mobile.
+Accessibility compliant.
+Professional cybersecurity color palette.
+High performance.
+No UI lag.
+Lazy loading.
+Code splitting.
+Virtual scrolling.
+Infinite tables.
+Optimistic updates.
+Offline support.
+The frontend must feel like a premium enterprise security platform rather than a standard web application, delivering a polished experience suitable for large-scale security operations centers and commercial customers.
+
+
+PART 6 — BACKEND APIs + DATABASE SCHEMA + RBAC
+Objective
+Build a highly scalable enterprise backend capable of supporting millions of assets, hundreds of thousands of concurrent scans, distributed workers, AI analysis, plugin execution, and multi-tenant organizations.
+The backend must be API-first, cloud-native, event-driven, modular, secure, horizontally scalable, and production-ready.
+Backend Technology Stack
+Use:
+FastAPI (Python)
+Python 3.12+
+SQLAlchemy 2.x
+Alembic
+PostgreSQL
+Redis
+RabbitMQ or NATS
+Celery or Temporal
+WebSockets
+Pydantic v2
+JWT Authentication
+OAuth2
+OpenAPI
+AsyncIO
+Docker
+Kubernetes
+gRPC (internal communication)
+REST API
+GraphQL (optional)
+Object Storage (MinIO/S3)
+No monolithic architecture.
+Everything must be modular.
+Architecture
+Follow Clean Architecture.
+Use:
+Presentation Layer
+Application Layer
+Domain Layer
+Infrastructure Layer
+Repository Pattern
+Dependency Injection
+CQRS where beneficial
+Domain Events
+Event Bus
+Message Queue
+Background Workers
+Microservice-ready structure
+Each module must be independently maintainable.
+Core Backend Modules
+Authentication
+Authorization
+Organizations
+Projects
+Assets
+Scans
+Scan Pipeline
+AI Engine
+Verification Engine
+Plugin Manager
+Workflow Engine
+Scheduler
+Notifications
+Reporting
+Storage
+Logs
+Metrics
+Audit
+Licensing
+Administration
+REST API
+Expose fully documented REST APIs.
+Examples:
+/auth
+/users
+/organizations
+/projects
+/assets
+/scans
+/findings
+/workflows
+/plugins
+/reports
+/workers
+/settings
+/notifications
+/logs
+/metrics
+/health
+/system
+/version
+Every endpoint must include:
+Validation
+Authentication
+Authorization
+Pagination
+Filtering
+Sorting
+Search
+Rate Limiting
+Audit Logging
+Error Handling
+OpenAPI Documentation
+Authentication
+Support:
+JWT
+OAuth2
+OpenID Connect
+Google Login
+GitHub Login
+Microsoft Login
+Azure AD
+LDAP
+SAML
+Enterprise SSO
+Magic Links
+API Keys
+Service Accounts
+PAT Tokens
+Session Tokens
+Refresh Tokens
+MFA
+WebAuthn
+Passkeys
+RBAC (Role-Based Access Control)
+Implement enterprise-grade RBAC.
+Default roles:
+Super Admin
+Organization Admin
+Security Manager
+SOC Analyst
+Penetration Tester
+Developer
+Read Only
+Auditor
+Guest
+Every permission should be granular.
+Examples:
+Create Scan
+Delete Scan
+View Reports
+Export Reports
+Install Plugins
+Delete Plugins
+Manage Users
+View Logs
+Manage Workers
+Manage API Keys
+Manage Billing
+Manage Organizations
+Manage Projects
+Approve Findings
+Override AI Decisions
+Modify Risk Scores
+Permissions should be configurable without code changes.
+Multi-Tenant Architecture
+Support unlimited organizations.
+Each organization has:
+Projects
+Users
+Assets
+Workers
+Plugins
+Reports
+Settings
+API Keys
+Audit Logs
+Storage
+Branding
+Notification Rules
+Data isolation is mandatory.
+Tenant separation must be enforced at every layer.
+Database
+Primary Database:
+PostgreSQL
+Caching:
+Redis
+Blob Storage:
+S3 / MinIO
+Search:
+OpenSearch / Elasticsearch
+Analytics:
+ClickHouse (optional)
+Time-Series:
+TimescaleDB (optional)
+Database Tables
+Organizations
+Users
+Roles
+Permissions
+Projects
+Assets
+Asset Tags
+Scans
+Scan Tasks
+Task Results
+Findings
+Finding Evidence
+AI Decisions
+Verification Results
+Plugins
+Plugin Versions
+Plugin Configurations
+Workers
+Worker Health
+Queues
+Reports
+Notifications
+Audit Logs
+API Keys
+Sessions
+OAuth Accounts
+Secrets
+Integrations
+Schedules
+Comments
+Attachments
+Activity Timeline
+Licenses
+System Settings
+Feature Flags
+Every table must include:
+UUID Primary Key
+Created At
+Updated At
+Created By
+Updated By
+Soft Delete
+Version Number
+Audit Fields
+Indexes
+Foreign Keys
+Constraints
+Findings Schema
+Each finding stores:
+Unique ID
+Title
+Description
+Severity
+Confidence
+CVSS
+EPSS
+CWE
+CVE
+CAPEC
+OWASP Mapping
+MITRE Mapping
+Affected Asset
+Affected Endpoint
+HTTP Request
+HTTP Response
+Evidence
+Payload
+Screenshot
+Exploit Status
+Verification Status
+False Positive Status
+AI Summary
+Developer Recommendation
+Executive Summary
+Business Impact
+Likelihood
+Risk Score
+References
+Related Findings
+History
+Comments
+Attachments
+API Standards
+JSON only.
+Consistent naming.
+Consistent status codes.
+Standard error format.
+Versioned APIs.
+Idempotent operations.
+Bulk endpoints.
+Cursor pagination.
+Compression.
+ETags.
+Caching headers.
+WebSockets
+Support live events:
+Scan Progress
+Queue Updates
+Worker Status
+Plugin Installation
+Finding Verification
+Notifications
+System Health
+AI Decisions
+Report Generation
+User Presence
+Event System
+Every major action generates an event.
+Examples:
+ScanStarted
+ScanFinished
+FindingCreated
+FindingVerified
+PluginInstalled
+PluginUpdated
+UserLoggedIn
+WorkerConnected
+WorkerDisconnected
+ReportGenerated
+NotificationSent
+Events should be published to the message bus.
+Consumers must remain independent.
+Queue System
+Background jobs:
+Scan Execution
+AI Analysis
+Verification
+Report Generation
+Email Delivery
+Webhook Delivery
+Plugin Installation
+Data Import
+Asset Discovery
+Cleanup
+Retry Jobs
+Support:
+Priority Queues
+Delayed Jobs
+Retries
+Dead Letter Queue
+Backoff Policies
+Job Scheduling
+Cancellation
+Progress Tracking
+Storage Layer
+Store:
+Screenshots
+Logs
+Reports
+Evidence
+Attachments
+Payloads
+Exports
+Artifacts
+Temporary Files
+Support lifecycle policies.
+Automatic cleanup.
+Encryption at rest.
+Audit Logging
+Every sensitive action must be recorded.
+Include:
+User
+Organization
+IP Address
+Device
+Timestamp
+Old Value
+New Value
+Action
+Affected Resource
+Status
+Correlation ID
+Audit logs must be immutable.
+Security
+Input validation
+Output encoding
+Parameterized queries
+Secrets management
+Encrypted credentials
+TLS everywhere
+CSRF protection
+CORS policy
+Secure cookies
+Content Security Policy
+Rate limiting
+Brute-force protection
+IP restrictions
+API throttling
+Security headers
+Encryption at rest
+Encryption in transit
+Secret rotation
+Performance
+Support:
+100,000+ assets
+Millions of findings
+Thousands of concurrent scans
+Horizontal scaling
+Connection pooling
+Async database operations
+Read replicas
+Caching
+Streaming APIs
+Lazy loading
+Batch processing
+Bulk inserts
+Bulk updates
+Database partitioning
+Extensibility
+Every backend module must expose clean interfaces.
+No business logic should depend on concrete implementations.
+Future AI models, scanners, storage providers, databases, notification providers, authentication providers, and reporting engines must be replaceable without rewriting the platform.
+The backend must serve as the secure, scalable, and extensible foundation for the entire enterprise vulnerability management ecosystem.
+
+PART 7 — PLUGIN SDK + DYNAMIC GITHUB TOOL MANAGEMENT
+Objective
+Design a complete enterprise Plugin SDK and Plugin Management Platform that allows the system to dynamically install, update, configure, execute, disable, rollback, and remove security tools without modifying the core application.
+The platform must support first-party plugins, community plugins, commercial plugins, and private enterprise plugins.
+The core platform must remain completely independent from individual security tools.
+Everything should be plugin-driven.
+Plugin Architecture
+Every scanner, AI model, parser, verifier, report generator, notification provider, cloud connector, authentication provider, and integration must be implemented as an independent plugin.
+Examples:
+Nuclei Plugin
+OWASP ZAP Plugin
+Burp Plugin
+SQLMap Plugin
+Dalfox Plugin
+XSStrike Plugin
+Amass Plugin
+Subfinder Plugin
+Naabu Plugin
+Masscan Plugin
+Nmap Plugin
+Nikto Plugin
+Katana Plugin
+Feroxbuster Plugin
+Trivy Plugin
+Semgrep Plugin
+CodeQL Plugin
+OpenVAS Plugin
+Nessus Plugin
+Slack Plugin
+Discord Plugin
+Microsoft Teams Plugin
+Jira Plugin
+GitHub Plugin
+GitLab Plugin
+Azure DevOps Plugin
+AWS Plugin
+Azure Plugin
+Google Cloud Plugin
+OpenAI Plugin
+Claude Plugin
+Gemini Plugin
+Local LLM Plugin
+Every component must follow the exact same SDK.
+Plugin SDK
+Provide a complete SDK for developers.
+The SDK must include:
+Plugin Base Class
+Metadata Definition
+Lifecycle Hooks
+Configuration Schema
+Validation
+Execution Context
+Logging API
+Metrics API
+Storage API
+Secrets API
+Event API
+Worker API
+Authentication Helpers
+Dependency Injection
+Error Handling
+Version Compatibility
+Testing Utilities
+CLI Generator
+Documentation Templates
+Example Plugins
+Plugin Manifest
+Every plugin must contain a manifest.
+Example fields:
+Plugin Name
+Plugin ID
+Description
+Version
+Author
+License
+Repository
+Homepage
+Documentation URL
+Category
+Supported Platforms
+Supported Architectures
+Minimum Platform Version
+Maximum Platform Version
+Dependencies
+Optional Dependencies
+Permissions Required
+Network Requirements
+Resource Limits
+Default Configuration
+Health Check Endpoint
+Entry Point
+Supported Input Types
+Supported Output Types
+Supported Events
+Digital Signature
+Checksum
+Release Notes
+Tags
+Plugin Categories
+Scanner
+Recon
+Crawler
+Fuzzer
+Exploit
+Verification
+AI
+Reporting
+Parser
+Exporter
+Notification
+Authentication
+Storage
+Cloud
+Container
+SAST
+DAST
+IAST
+SCA
+Secrets Detection
+Infrastructure
+Monitoring
+Compliance
+Visualization
+Workflow
+Utility
+Plugin Lifecycle
+Install
+Validate
+Verify Signature
+Resolve Dependencies
+Download
+Extract
+Configure
+Register
+Initialize
+Health Check
+Execute
+Update
+Restart
+Disable
+Rollback
+Remove
+Cleanup
+Every stage must generate events and logs.
+Dynamic GitHub Integration
+The platform must support installing plugins directly from GitHub repositories.
+Capabilities:
+Clone repository
+Download release
+Download specific version
+Pin version
+Verify checksum
+Verify digital signature
+Read manifest
+Read release notes
+Resolve dependencies
+Build plugin if necessary
+Install automatically
+Register automatically
+Run health checks
+Enable automatically
+Rollback if installation fails
+Support:
+Public repositories
+Private repositories
+Enterprise GitHub
+GitHub Releases
+GitHub Tags
+GitHub Branches
+GitHub Commits
+Plugin Marketplace
+Implement an enterprise marketplace.
+Features:
+Browse plugins
+Search plugins
+Filter by category
+Filter by author
+Filter by popularity
+Filter by rating
+Filter by compatibility
+View screenshots
+View documentation
+View changelog
+Install with one click
+Update all
+Rollback version
+Disable plugin
+Delete plugin
+Export configuration
+Import configuration
+Favorite plugins
+Recommended plugins
+Verified publisher badge
+Security score
+Compatibility checker
+Dependency visualization
+Plugin Execution
+Plugins execute inside isolated environments.
+Support:
+Docker
+Podman
+Kubernetes Jobs
+Firecracker MicroVM
+Remote Worker
+Dedicated Worker
+Every execution includes:
+CPU Limits
+Memory Limits
+Disk Limits
+Network Restrictions
+Timeout
+Execution Logs
+Exit Code
+Artifacts
+Temporary Storage
+Automatic Cleanup
+No plugin should have unrestricted access to the host system.
+Plugin Communication
+Plugins communicate only through defined APIs.
+Never allow direct database access.
+Never allow direct internal service access.
+Communication methods:
+REST
+gRPC
+Message Bus
+Events
+SDK Interfaces
+Shared Contracts
+Permissions Model
+Plugins request permissions.
+Examples:
+Network Access
+Filesystem Access
+Internet Access
+Secrets Access
+Storage Access
+Notification Access
+AI Access
+Worker Access
+Cloud Access
+API Access
+Shell Execution
+Every permission must require administrator approval.
+Permissions can be revoked at any time.
+Configuration System
+Each plugin supports:
+Default Configuration
+Custom Configuration
+Environment Variables
+Secret References
+Runtime Parameters
+Validation Rules
+Configuration Versioning
+Live Reload
+Import/Export
+Configuration Templates
+Version Management
+Support:
+Semantic Versioning
+Latest Stable
+Latest Beta
+Pinned Version
+Rollback
+Version History
+Compatibility Matrix
+Dependency Resolution
+Automatic Updates
+Manual Updates
+Scheduled Updates
+Canary Deployment
+Blue/Green Updates
+Dependency Management
+Plugins may depend on:
+Other Plugins
+Python Packages
+Docker Images
+External Binaries
+Shared Libraries
+AI Models
+The system automatically:
+Downloads dependencies
+Verifies integrity
+Caches artifacts
+Removes unused packages
+Detects conflicts
+Prevents incompatible installations
+Health Monitoring
+Continuously monitor:
+Plugin Status
+Memory Usage
+CPU Usage
+Execution Time
+Crash Count
+Error Rate
+Response Time
+Dependency Health
+Last Update
+Security Alerts
+Generate automatic alerts when unhealthy plugins are detected.
+Plugin Events
+Plugins may subscribe to:
+ScanStarted
+ScanFinished
+AssetCreated
+FindingCreated
+FindingVerified
+ReportGenerated
+UserLogin
+WorkerOnline
+WorkerOffline
+PluginInstalled
+PluginUpdated
+NotificationSent
+SystemStartup
+SystemShutdown
+Plugins may also publish their own events.
+Security Requirements
+Every plugin must:
+Be digitally signed
+Pass integrity verification
+Run in sandbox
+Respect resource limits
+Use least privilege
+Support audit logging
+Support version verification
+Support secure updates
+Support rollback
+Support secret isolation
+Never expose credentials
+Never bypass RBAC
+Never bypass audit logs
+Developer Experience
+Provide a Plugin CLI capable of:
+Create Plugin
+Build Plugin
+Test Plugin
+Package Plugin
+Sign Plugin
+Publish Plugin
+Validate Plugin
+Run Plugin
+Debug Plugin
+Generate Documentation
+Generate Manifest
+Run Unit Tests
+Run Integration Tests
+Future Proofing
+The Plugin SDK must allow unlimited expansion without requiring modifications to the core platform.
+Future scanners, AI models, integrations, cloud providers, authentication systems, reporting engines, and enterprise extensions should be installable simply by adding new plugins.
+The platform should evolve into a complete security ecosystem where nearly every capability is delivered through dynamically managed, independently versioned plugins while the core remains lightweight, stable, secure, and maintainable.
+
+PART 8 — DOCKER SANDBOX + DISTRIBUTED WORKERS + QUEUE SYSTEM
+Objective
+Build a production-grade distributed execution platform capable of securely running thousands of concurrent security scans across multiple worker nodes while ensuring complete isolation, scalability, fault tolerance, and high availability.
+The execution infrastructure must be designed similarly to Kubernetes, GitHub Actions, GitLab Runners, Temporal Workers, Google Borg, and enterprise cloud-native platforms.
+Every security tool must execute inside an isolated sandbox.
+No scanner should ever run directly on the host operating system.
+Distributed Architecture
+The platform consists of:
+API Server
+Scheduler
+Workflow Engine
+Queue System
+Worker Manager
+Worker Nodes
+Plugin Runtime
+Sandbox Runtime
+Object Storage
+Database
+Redis Cache
+Monitoring Stack
+Metrics Engine
+Notification Service
+Each component must scale independently.
+No single point of failure.
+Worker Types
+Support multiple worker categories.
+General Workers
+Recon Workers
+Web Scanning Workers
+API Scanning Workers
+Cloud Workers
+Container Workers
+AI Workers
+Verification Workers
+Reporting Workers
+Heavy Compute Workers
+GPU Workers
+Custom Enterprise Workers
+Workers should register automatically with the platform.
+Worker Registration
+Each worker must register with:
+Unique Worker ID
+Hostname
+Operating System
+Architecture
+Available CPU
+Available RAM
+Disk Space
+GPU Information
+Docker Version
+Kubernetes Version
+Installed Plugins
+Worker Version
+Platform Version
+Region
+Availability Zone
+IP Address
+Health Status
+Current Load
+Capabilities
+Tags
+Heartbeat Interval
+Workers periodically update their status.
+Docker Sandbox
+Every task runs inside an isolated Docker container.
+Each container receives:
+Read-only filesystem when possible
+Temporary writable workspace
+Limited CPU
+Limited RAM
+Limited Disk
+Limited Network
+Temporary credentials
+Isolated filesystem
+Automatic cleanup after completion
+Containers must never persist sensitive information.
+Kubernetes Support
+Support Kubernetes execution.
+Capabilities:
+Job Execution
+CronJobs
+Namespaces
+Node Selectors
+Affinity Rules
+Taints and Tolerations
+Resource Quotas
+Horizontal Pod Autoscaling
+Vertical Scaling
+Cluster Autoscaling
+Persistent Volumes
+Secrets
+ConfigMaps
+Service Accounts
+Network Policies
+Support deployment across multiple clusters.
+Firecracker MicroVM Support
+Optionally support Firecracker MicroVMs for maximum isolation.
+Benefits:
+Near virtual-machine isolation
+Fast startup
+Minimal overhead
+Improved security
+Suitable for untrusted plugins
+Enterprise customers may choose Docker or Firecracker.
+Queue System
+Implement a distributed queue.
+Support:
+Priority Queue
+FIFO
+LIFO
+Weighted Queue
+Scheduled Queue
+Delayed Queue
+Retry Queue
+Dead Letter Queue
+Bulk Queue
+Dependency Queue
+Each job has:
+Job ID
+Priority
+Creation Time
+Owner
+Target
+Plugin
+Workflow
+Retries
+Status
+Timeout
+Assigned Worker
+Progress
+Logs
+Artifacts
+Scheduling Engine
+The scheduler must intelligently assign jobs.
+Consider:
+Worker Load
+CPU Usage
+RAM Usage
+GPU Availability
+Plugin Availability
+Worker Region
+Worker Tags
+Network Latency
+Estimated Runtime
+Historical Performance
+Queue Priority
+Health Status
+Avoid overloaded workers.
+Autoscaling
+Support automatic scaling.
+Scale workers based on:
+Queue Size
+CPU Utilization
+RAM Usage
+Average Wait Time
+Running Jobs
+Job Failure Rate
+Cloud Metrics
+Support:
+AWS Auto Scaling
+Azure VM Scale Sets
+Google Managed Instance Groups
+Kubernetes HPA
+Manual Scaling
+Workflow Execution
+Each workflow consists of multiple dependent tasks.
+Example:
+Recon
+↓
+Fingerprinting
+↓
+Crawling
+↓
+Parameter Discovery
+↓
+Scanning
+↓
+Verification
+↓
+AI Analysis
+↓
+Reporting
+↓
+Notification
+Failed tasks should retry automatically.
+Independent tasks execute concurrently.
+Resource Management
+Every execution specifies:
+CPU Limit
+Memory Limit
+Disk Limit
+Execution Timeout
+Network Policy
+Maximum Threads
+Maximum Child Processes
+Temporary Storage
+Bandwidth Limits
+File Size Limits
+API Rate Limits
+Fault Tolerance
+Workers may fail unexpectedly.
+The platform must:
+Detect worker failure
+Reassign unfinished jobs
+Restore checkpoints
+Retry safely
+Prevent duplicate execution
+Maintain workflow integrity
+Recover automatically
+Checkpointing
+Long-running scans should periodically save progress.
+If interrupted:
+Resume from checkpoint
+Avoid restarting entire workflow
+Recover artifacts
+Recover logs
+Recover scan state
+Health Monitoring
+Monitor every worker continuously.
+Metrics include:
+CPU
+RAM
+Disk
+Network
+Container Count
+Queue Length
+Plugin Status
+Heartbeat
+Error Rate
+Average Runtime
+Failure Count
+Temperature (optional)
+GPU Utilization
+Logging
+Collect structured logs.
+Include:
+Timestamp
+Worker ID
+Job ID
+Plugin
+Task
+Severity
+Execution Time
+Exit Code
+Correlation ID
+Exception Stack Trace
+Logs should be searchable.
+Metrics
+Collect Prometheus-compatible metrics.
+Examples:
+Jobs Started
+Jobs Finished
+Jobs Failed
+Queue Depth
+Worker Count
+Plugin Runtime
+Average Scan Time
+Verification Time
+AI Latency
+Container Startup Time
+Network Throughput
+Resource Consumption
+Artifact Storage
+Store execution artifacts.
+Examples:
+Logs
+JSON Results
+XML Results
+Screenshots
+HTTP Requests
+HTTP Responses
+Payloads
+Reports
+Evidence Files
+PCAP Files
+Temporary Files
+Support automatic expiration policies.
+Secrets Management
+Workers never receive permanent credentials.
+Use:
+Vault Integration
+Short-lived Tokens
+Dynamic Secrets
+Secret Rotation
+Environment Injection
+Encrypted Storage
+Secrets must never appear in logs.
+Network Isolation
+Support multiple networking modes.
+Isolated Network
+Restricted Internet
+Proxy Mode
+VPN Mode
+Private Subnet
+Customer Network
+Air-Gapped Deployment
+Per-plugin firewall rules.
+Worker Security
+Workers must:
+Use TLS
+Authenticate with certificates
+Verify platform identity
+Encrypt communication
+Validate commands
+Reject unauthorized requests
+Log every action
+Run least-privilege containers
+Enterprise Features
+Support:
+Multiple Regions
+Multi-Cloud
+Hybrid Cloud
+On-Premises
+Edge Workers
+Dedicated Customer Workers
+Shared Worker Pools
+High Availability
+Disaster Recovery
+Cross-Region Failover
+Performance Targets
+Support:
+10,000+ concurrent scan jobs
+100,000+ queued tasks
+Thousands of active workers
+Sub-second scheduling decisions
+Automatic workload balancing
+Horizontal scaling without downtime
+Near real-time job monitoring
+Extensibility
+The execution layer must remain infrastructure-agnostic.
+Support future runtimes, orchestration systems, container technologies, cloud providers, and execution engines without requiring architectural changes.
+This execution platform should become the scalable backbone responsible for securely running every scanner, plugin, AI model, verification engine, and reporting task across the entire enterprise security ecosystem.
+
+PART 9 — REPORTING ENGINE + PDF/DOCX/HTML/SARIF + EXECUTIVE REPORTS
+Objective
+Build an enterprise-grade reporting engine capable of automatically generating technical, executive, compliance, and management reports in multiple formats with customizable branding, templates, digital signatures, scheduling, versioning, and multilingual support.
+The reporting engine must produce reports comparable to Burp Enterprise, Invicti, Qualys VMDR, Rapid7 InsightVM, Tenable Nessus, Microsoft Defender, Wiz, and Palo Alto Prisma Cloud.
+Reports must be visually professional, technically detailed, and suitable for executives, security teams, auditors, developers, compliance officers, and customers.
+Supported Output Formats
+Generate reports in:
+PDF
+DOCX
+HTML
+Markdown
+JSON
+CSV
+XML
+SARIF
+OpenVEX
+CycloneDX
+SPDX
+Excel (XLSX)
+Plain Text
+ZIP Archive
+Support exporting multiple formats simultaneously.
+Report Categories
+Executive Summary
+Technical Report
+Developer Report
+SOC Report
+Management Report
+Compliance Report
+Vulnerability Report
+Asset Report
+Scan Report
+API Security Report
+Cloud Security Report
+Container Security Report
+Kubernetes Report
+Infrastructure Report
+Source Code Report
+Dependency Report
+SBOM Report
+Threat Intelligence Report
+Custom Report
+Executive Report
+Designed for:
+CEO
+CTO
+CISO
+Board Members
+Executives
+Include:
+Executive Summary
+Overall Risk Score
+Business Impact
+Critical Findings
+High Risk Trends
+Security Score
+Attack Surface Summary
+Compliance Status
+Top Risks
+Top Affected Assets
+Estimated Financial Impact
+Risk Heatmap
+Risk Trend
+Charts
+Recommendations
+Next Steps
+Remediation Progress
+AI-generated Business Summary
+Minimal technical jargon.
+Professional layout.
+Technical Report
+Designed for:
+Security Engineers
+Penetration Testers
+SOC Teams
+Include:
+Full Finding Details
+Evidence
+Payloads
+HTTP Requests
+HTTP Responses
+Headers
+Screenshots
+Timeline
+CVSS
+EPSS
+CWE
+CVE
+OWASP Mapping
+MITRE ATT&CK Mapping
+CAPEC Mapping
+Affected Assets
+Affected Endpoints
+Verification Status
+Exploitability
+Confidence Score
+References
+Reproduction Steps
+Remediation
+AI Explanation
+Developer Report
+Optimized for developers.
+Include:
+Root Cause
+Affected Code
+Secure Coding Recommendations
+Patch Examples
+Language-specific Fixes
+Framework-specific Fixes
+Code Snippets
+Configuration Examples
+References
+Estimated Fix Difficulty
+Regression Testing Recommendations
+Compliance Reports
+Generate reports for:
+OWASP Top 10
+OWASP API Top 10
+PCI DSS
+ISO 27001
+SOC 2
+HIPAA
+GDPR
+NIST CSF
+NIST 800-53
+CIS Benchmarks
+MITRE ATT&CK
+MITRE D3FEND
+DISA STIG
+FedRAMP
+Cyber Essentials
+Custom Compliance Frameworks
+Automatically map findings to controls.
+Report Sections
+Cover Page
+Table of Contents
+Executive Summary
+Methodology
+Scope
+Assets
+Findings Summary
+Risk Matrix
+Charts
+Technical Details
+Evidence
+Remediation
+Appendices
+Glossary
+References
+Audit Information
+Digital Signature
+Version Information
+Finding Layout
+Each vulnerability includes:
+Title
+Severity
+Confidence
+CVSS
+EPSS
+Business Impact
+Likelihood
+Affected Asset
+Affected Endpoint
+Evidence
+HTTP Request
+HTTP Response
+Payload
+Screenshots
+Verification Result
+AI Summary
+Developer Recommendation
+Executive Explanation
+References
+Timeline
+Status
+Tags
+Comments
+Attachments
+Charts and Visualizations
+Generate professional charts.
+Examples:
+Severity Distribution
+Risk Heatmap
+CVSS Distribution
+Asset Distribution
+Technology Stack
+Attack Surface
+Compliance Coverage
+Trend Analysis
+Remediation Progress
+Worker Utilization
+Scan Duration
+Vulnerability Timeline
+Risk Over Time
+Executive Dashboard
+MITRE Matrix
+OWASP Categories
+Plugin Usage
+Cloud Resources
+API Security Overview
+Branding
+Support organization branding.
+Company Logo
+Company Name
+Primary Color
+Secondary Color
+Footer
+Header
+Custom Fonts
+Watermark
+Custom Cover Page
+Custom Disclaimer
+Custom Contact Information
+Custom Legal Notice
+Templates
+Provide multiple templates.
+Executive
+Technical
+Developer
+Compliance
+Minimal
+Enterprise
+Dark Theme
+Light Theme
+Government
+Financial
+Healthcare
+Custom Templates
+Templates should be editable.
+Scheduling
+Support automatic report generation.
+Daily
+Weekly
+Monthly
+Quarterly
+Yearly
+After Every Scan
+After Verification
+After AI Analysis
+Custom Cron Schedule
+Automatically deliver reports.
+Delivery Methods
+Email
+Slack
+Microsoft Teams
+Discord
+Webhook
+SFTP
+AWS S3
+Azure Blob Storage
+Google Cloud Storage
+FTP
+Shared Folder
+REST API
+Digital Signatures
+Support:
+Digital Signatures
+PDF Signing
+Hash Verification
+Report Integrity
+Tamper Detection
+Version Tracking
+Audit Trail
+Version Control
+Every report has:
+Unique Report ID
+Version
+Created Date
+Created By
+Generation Time
+Template Version
+Scan Version
+AI Model Version
+Approval Status
+Digital Signature
+History
+Searchable Reports
+Support:
+Full Text Search
+Filtering
+Sorting
+Tagging
+Favorites
+Archive
+Retention Policies
+Version Comparison
+Duplicate Detection
+Localization
+Support multiple languages.
+RTL support.
+Localized date formats.
+Localized number formats.
+Localized compliance terminology.
+AI Generated Content
+AI automatically generates:
+Executive Summary
+Risk Narrative
+Business Impact Analysis
+Remediation Summary
+Developer Explanation
+Attack Chain Description
+Prioritization Recommendations
+Compliance Gap Analysis
+Next Actions
+Security Posture Assessment
+The AI must generate concise, technically accurate, and business-friendly language.
+Performance
+Generate reports asynchronously.
+Support very large reports.
+Streaming generation.
+Parallel rendering.
+Background processing.
+Incremental generation.
+Security
+Reports may contain sensitive information.
+Support:
+Encryption
+Password Protection
+Access Control
+Expiring Links
+Download Tracking
+Audit Logging
+Redaction
+Selective Sharing
+Classification Labels
+API Support
+Expose APIs for:
+Generate Report
+Download Report
+Delete Report
+Archive Report
+Search Reports
+Compare Reports
+Preview Report
+Schedule Report
+Approve Report
+Cancel Report
+Retrieve Metadata
+Future Expansion
+The reporting engine must support additional report formats, compliance standards, AI-generated narratives, visualization engines, branding systems, and enterprise integrations without requiring architectural changes.
+The reporting subsystem should become a complete enterprise reporting platform capable of delivering executive-ready intelligence, auditor-ready compliance evidence, and developer-ready remediation guidance from a single unified security platform.
+
+PART 10 — MONITORING + LOGS + METRICS + NOTIFICATIONS
+Objective
+Build an enterprise-grade observability platform providing complete visibility into every component of the system, including scanners, AI engines, plugins, workers, APIs, infrastructure, databases, queues, and user activities.
+The monitoring system must enable real-time troubleshooting, performance analysis, security auditing, anomaly detection, capacity planning, and operational intelligence.
+The observability platform should be comparable to Datadog, Grafana Cloud, Kibana, Splunk Enterprise, New Relic, Elastic Observability, and Microsoft Azure Monitor.
+Observability Components
+Implement four major pillars:
+Metrics
+Logs
+Traces
+Events
+Every system component must emit structured telemetry.
+Metrics Collection
+Collect metrics from:
+API Server
+Database
+Redis
+Queue System
+Scheduler
+Workflow Engine
+AI Engine
+Verification Engine
+Plugins
+Workers
+Containers
+Kubernetes
+Storage
+Authentication
+Notification Services
+Reporting Engine
+Cloud Integrations
+Third-party APIs
+Infrastructure Metrics
+Monitor:
+CPU Usage
+Memory Usage
+Disk Usage
+Disk IOPS
+Filesystem Health
+Network Throughput
+Network Errors
+Bandwidth Usage
+Open Connections
+Socket Count
+Load Average
+Temperature (where supported)
+GPU Utilization
+GPU Memory
+Container Count
+Pod Count
+Cluster Health
+Node Health
+Auto Scaling Events
+Application Metrics
+Track:
+Requests Per Second
+API Latency
+Average Response Time
+95th Percentile
+99th Percentile
+Error Rate
+Success Rate
+Authentication Success
+Authentication Failure
+Queue Processing Time
+Plugin Execution Time
+Scan Duration
+Verification Duration
+AI Processing Time
+Report Generation Time
+Notification Delivery Time
+Worker Utilization
+Task Completion Rate
+Task Failure Rate
+Security Metrics
+Track:
+Critical Vulnerabilities
+High Vulnerabilities
+False Positive Rate
+Verified Findings
+Attack Surface Size
+Risk Score
+Security Score
+Compliance Score
+MITRE Coverage
+OWASP Coverage
+Plugin Security Alerts
+Unauthorized Access Attempts
+Blocked Requests
+API Abuse
+Brute Force Attempts
+Privilege Escalation Attempts
+Suspicious Activity
+Structured Logging
+Every component must generate structured JSON logs.
+Each log includes:
+Timestamp
+Correlation ID
+Trace ID
+Request ID
+User ID
+Organization ID
+Worker ID
+Plugin ID
+Service Name
+Hostname
+Severity
+Component
+Operation
+Execution Time
+Status
+Exception
+Stack Trace
+Metadata
+Logs must never contain secrets.
+Log Categories
+System Logs
+Application Logs
+Security Logs
+Audit Logs
+Authentication Logs
+Worker Logs
+Plugin Logs
+AI Logs
+Verification Logs
+API Logs
+Database Logs
+Queue Logs
+Infrastructure Logs
+Container Logs
+Kubernetes Logs
+Notification Logs
+Integration Logs
+Distributed Tracing
+Implement distributed tracing across all services.
+Track:
+API Requests
+Database Queries
+Queue Operations
+Plugin Execution
+AI Analysis
+Verification Engine
+Worker Execution
+Cloud Integrations
+Notification Delivery
+Report Generation
+Support correlation across all services.
+Dashboards
+Provide professional dashboards for:
+Executive Dashboard
+SOC Dashboard
+Infrastructure Dashboard
+Worker Dashboard
+Plugin Dashboard
+API Dashboard
+Database Dashboard
+Security Dashboard
+Compliance Dashboard
+AI Dashboard
+Performance Dashboard
+System Health Dashboard
+Alerting Engine
+Support intelligent alerting.
+Trigger alerts for:
+Worker Offline
+Queue Overflow
+Plugin Failure
+Scan Failure
+Database Failure
+Redis Failure
+API Downtime
+High CPU
+High Memory
+Disk Full
+Container Crash
+Repeated Exceptions
+Authentication Attacks
+Brute Force
+Critical Vulnerability Detected
+AI Service Failure
+Verification Failure
+License Expiration
+Certificate Expiration
+Backup Failure
+High Latency
+Unhealthy Node
+Notification Channels
+Deliver alerts through:
+Email
+Slack
+Microsoft Teams
+Discord
+Telegram
+SMS
+Push Notifications
+Webhook
+PagerDuty
+Opsgenie
+ServiceNow
+Jira
+GitHub Issues
+GitLab Issues
+Azure DevOps
+Custom Integrations
+Alert Rules
+Allow administrators to configure:
+Threshold Rules
+Rate Rules
+Anomaly Detection
+Time Windows
+Escalation Policies
+Silencing
+Maintenance Windows
+Auto Resolution
+Notification Routing
+Severity Mapping
+Event Stream
+Generate events for:
+User Login
+User Logout
+Scan Started
+Scan Finished
+Scan Failed
+Plugin Installed
+Plugin Updated
+Plugin Removed
+Worker Connected
+Worker Disconnected
+Finding Created
+Finding Verified
+AI Decision
+Report Generated
+Webhook Delivered
+Notification Sent
+Configuration Changed
+Role Updated
+Permission Modified
+System Restarted
+Backup Completed
+Restore Completed
+Audit Trail
+Record every administrative action.
+Track:
+Who
+When
+Where
+IP Address
+Device
+Old Value
+New Value
+Affected Resource
+Action Type
+Approval Status
+Correlation ID
+Audit logs must be immutable.
+Health Checks
+Every service exposes health endpoints.
+Support:
+Liveness Checks
+Readiness Checks
+Startup Checks
+Dependency Checks
+Plugin Health
+Database Health
+Redis Health
+Queue Health
+Storage Health
+Worker Health
+AI Model Health
+Anomaly Detection
+Use AI to detect:
+Abnormal Scan Failures
+Unusual Worker Behavior
+Resource Spikes
+Suspicious User Activity
+Repeated Authentication Failures
+Unexpected Queue Growth
+Plugin Instability
+Performance Regression
+Infrastructure Degradation
+Automatically generate recommendations.
+Capacity Planning
+Generate forecasts for:
+Storage Growth
+Worker Capacity
+Queue Capacity
+Database Growth
+CPU Trends
+Memory Trends
+Network Usage
+Expected Scan Volume
+Plugin Usage
+AI Resource Consumption
+Retention Policies
+Configurable retention for:
+Metrics
+Logs
+Events
+Audit Logs
+Reports
+Artifacts
+Notifications
+Backups
+Support automatic archival and deletion.
+Backup Monitoring
+Monitor:
+Backup Success
+Backup Failure
+Backup Duration
+Backup Size
+Restore Success
+Restore Failure
+Recovery Time
+Backup Integrity
+API
+Provide APIs for:
+Metrics
+Logs
+Events
+Alerts
+Health
+Audit Logs
+Dashboards
+Notification History
+Tracing Data
+System Status
+Enterprise Features
+Multi-region monitoring
+Multi-cluster monitoring
+Cross-cloud visibility
+Tenant isolation
+Custom dashboards
+Role-based dashboard access
+Real-time streaming
+High Availability
+Disaster Recovery
+Geo-redundancy
+Performance Requirements
+Millions of metrics per minute
+Real-time dashboards
+Sub-second alert processing
+Horizontal scalability
+High availability
+Minimal resource overhead
+Near real-time log ingestion
+Distributed storage
+Future Expansion
+The observability platform must support future monitoring providers, AI analytics engines, SIEM integrations, telemetry standards, log storage backends, tracing systems, and enterprise monitoring solutions without requiring modifications to the core architecture.
+The monitoring subsystem should evolve into a complete enterprise observability platform that provides actionable intelligence, operational visibility, security awareness, and proactive system health management across the entire cybersecurity ecosystem.
+
+Part 11 — Final Development Rules + Acceptance Criteria + Deliverables (Ultimate Production Requirements)
+This project MUST NOT be developed as a prototype.
+This MUST be a complete commercial-grade enterprise offensive security platform.
+Every single feature must be production-ready.
+No placeholders.
+No fake APIs.
+No TODO comments.
+No mocked scanners.
+No simulated vulnerabilities.
+Everything must execute real security tools.
+
+
+FINAL DEVELOPMENT RULES
+Code Quality
+Write clean architecture.
+SOLID principles.
+DRY.
+KISS.
+Dependency Injection.
+Repository Pattern.
+CQRS where appropriate.
+Domain Driven Design where useful.
+Fully typed code.
+No duplicated logic.
+Reusable modules only.
+Every function documented.
+Every API documented.
+Every component tested.
+
+Production Readiness
+Everything must support:
+High availability
+Horizontal scaling
+Fault tolerance
+Retry mechanisms
+Circuit breakers
+Timeouts
+Rate limiting
+Caching
+Queueing
+Monitoring
+Logging
+Metrics
+Health checks
+Graceful shutdown
+
+
+Coding Standards
+Backend:
+PEP8
+Black formatting
+isort
+mypy
+pytest
+Frontend:
+ESLint
+Prettier
+Strict TypeScript
+React best practices
+Accessibility
+WCAG compliance
+
+Security Standards
+OWASP ASVS
+OWASP Top 10
+API Security Top 10
+CWE Mitigations
+MITRE ATT&CK Mapping
+Secure Headers
+CSP
+HSTS
+CSRF Protection
+Input Validation
+Output Encoding
+Parameterized Queries
+Secrets Management
+JWT Security
+Token Rotation
+Encryption at Rest
+Encryption in Transit
+Audit Logging
+RBAC Enforcement
+Least Privilege
+Zero Trust Architecture
+
+
+Performance Targets
+Dashboard load
+<2 seconds
+Scan creation
+<500 ms
+API latency
+<200 ms
+Concurrent scans
+1000+
+Worker scalability
+Unlimited horizontal scaling
+Memory optimization
+Minimal CPU overhead
+Streaming responses
+Real-time updates
+
+
+AI Requirements
+LLMs are assistants.
+Never authoritative.
+Every finding verified.
+Every exploit verified.
+Every payload validated.
+Every recommendation evidence-based.
+AI confidence score required.
+Reasoning trace required.
+Supporting evidence required.
+False positives minimized.
+No hallucinated vulnerabilities.
+
+
+Reporting Requirements
+Every report must include:
+Executive Summary
+Technical Summary
+Risk Score
+CVSS
+CWE
+OWASP Mapping
+MITRE Mapping
+Affected Assets
+Affected URLs
+Evidence
+Request
+Response
+Screenshots
+Reproduction Steps
+Impact
+Likelihood
+Business Risk
+Developer Fix
+Secure Code Example
+References
+Timeline
+Scan Metadata
+Tool Versions
+Analyst Notes
+
+Dashboard Requirements
+Professional enterprise UI.
+No basic admin template.
+Comparable to:
+Burp Enterprise
+Invicti
+Qualys
+Tenable
+Rapid7
+Dark theme.
+Responsive.
+Fast.
+Beautiful charts.
+Interactive graphs.
+Real-time updates.
+Modern UX.
+
+Documentation Requirements
+Automatically generate:
+Swagger/OpenAPI
+Developer Documentation
+Architecture Documentation
+Deployment Guide
+Operator Manual
+Plugin SDK Guide
+API Examples
+CI/CD Guide
+Troubleshooting Guide
+FAQ
+
+
+Testing Requirements
+Unit Tests
+Integration Tests
+API Tests
+End-to-End Tests
+Security Tests
+Load Tests
+Stress Tests
+Chaos Tests
+Regression Tests
+Coverage >95%
+
+
+Acceptance Criteria
+Project is accepted ONLY IF:
+✓ Real scanners execute successfully
+✓ Plugins install dynamically
+✓ AI verifies findings correctly
+✓ False positives reduced significantly
+✓ Reports generated successfully
+✓ RBAC enforced
+✓ Authentication secure
+✓ APIs documented
+✓ Docker deployment works
+✓ Kubernetes deployment works
+✓ Distributed workers operate correctly
+✓ Queue system stable
+✓ Dashboard updates in real time
+✓ Monitoring operational
+✓ Metrics collected
+✓ Notifications sent
+✓ CI/CD pipeline successful
+✓ Automated testing passes
+✓ Security tests pass
+✓ Production deployment successful
+✓ Documentation complete
+✓ Code fully typed
+✓ No placeholder functionality
+✓ No mocked execution
+✓ No fake data
+✓ No simulated vulnerabilities
+✓ Enterprise-grade performance achieved
+
+Final Deliverables
+The AI must generate the complete project including:
+Complete Backend Source Code
+Complete Frontend Source Code
+Complete AI Engine
+Verification Engine
+False Positive Engine
+Real Scan Engine
+Plugin SDK
+Plugin Marketplace
+Dynamic Tool Installer
+Docker Sandbox
+Distributed Worker System
+Queue Infrastructure
+Monitoring Stack
+Logging Stack
+Metrics Stack
+Notification Services
+Database Models
+Alembic Migrations
+REST APIs
+WebSocket APIs
+Authentication System
+RBAC System
+Dashboard
+Charts
+Reporting Engine
+
+PDF Generator
+DOCX Generator
+HTML Reports
+SARIF Export
+Docker Compose
+Production Dockerfiles
+Kubernetes Manifests
+Helm Charts
+GitHub Actions
+CI/CD Pipelines
+Automated Testing
+Developer Documentation
+Administrator Documentation
+Deployment Guide
+Architecture Diagrams
+Configuration Files
+Environment Templates
+Sample Plugins
+Sample Policies
+Sample Scan Profiles
+Everything must compile successfully.
+Everything must run successfully.
+Everything must integrate successfully.
+Everything must be production-ready.
+
+This platform should be indistinguishable in quality from leading commercial offensive security products, while remaining modular, extensible, AI-assisted, and fully executable using real-world security tooling.
+

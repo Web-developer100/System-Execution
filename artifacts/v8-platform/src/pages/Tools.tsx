@@ -241,6 +241,13 @@ export default function Tools() {
                           {tool.githubUrl.replace("https://github.com/", "")}
                         </div>
                       )}
+                      {(tool as any).category && (
+                        <div className="mb-2">
+                          <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border border-primary/20 text-primary/50 bg-primary/5">
+                            {(tool as any).category}
+                          </span>
+                        </div>
+                      )}
                       <div className="grid grid-cols-3 gap-2 text-[10px] font-mono text-primary/40 border-t border-primary/10 pt-3 mb-3">
                         <div>
                           <div className="text-primary/20 uppercase">{t('tools.version')}</div>

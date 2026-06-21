@@ -1,0 +1,73 @@
+https://github.com/maurosoria/dirsearch.git
+git@github.com:ffuf/ffuf.git
+git@github.com:OJ/gobuster.git
+git@github.com:maurosoria/dirsearch.git
+git@github.com:epi052/feroxbuster.git
+git@github.com:projectdiscovery/nuclei.git
+https://github.com/yogeshojha/rengine.git
+git@github.com:sullo/nikto.git
+git@github.com:sqlmapproject/sqlmap.git
+git@github.com:commixproject/commix.git
+git@github.com:hahwul/dalfox.git
+git@github.com:projectdiscovery/subfinder.git
+https://github.com/projectdiscovery/naabu
+git@github.com:projectdiscovery/httpx.git
+git@github.com:BishopFox/jsluice.git
+git@github.com:xnl-h4ck3r/xnLinkFinder.git
+git@github.com:devanshbatham/ParamSpider.git
+git@github.com:initstring/cloud_enum.git
+git@github.com:tarunkant/Gopherus.git
+git@github.com:edoardottt/cariddi.git
+git@github.com:six2dez/reconftw.git
+https://github.com/six2dez/reconftw.git
+https://github.com/zan8in/afrog.git
+https://github.com/shuvonsec/claude-bug-bounty.git
+https://github.com/projectdiscovery/subfinder
+https://github.com/projectdiscovery/naabu
+https://github.com/ffuf/ffuf
+https://github.com/projectdiscovery/nuclei
+https://github.com/semgrep/semgrep
+https://github.com/aquasecurity/trivy
+https://github.com/LukaSikic/subzy
+git@github.com:aboul3la/Sublist3r.git
+git@github.com:ffuf/ffuf.git
+git@github.com:OJ/gobuster.git
+git@github.com:maurosoria/dirsearch.git
+git@github.com:epi052/feroxbuster.git
+git@github.com:danielmiessler/SecLists.git
+git@github.com:sullo/nikto.git
+org-13749115@github.com:PortSwigger/bypass-bot-detection.git
+git@github.com:DenisPodgurskii/pentestkit.git
+
+قوم ببناء منصة ويب مخصصة لاختبار الاختراق والأتمتة الأمنية (الواجهة المرفقة في الصورة). أحتاج منك كتابة كود الـ Backend الكامل (باستخدام Python Flask أو FastAPI - اختر الأنسب للمشروع) لإدارة "ترسانة الأدوات" بشكل ديناميكي وذكي ومربوط بقاعدة البيانات (مثل SQLite أو PostgreSQL).
+
+المطلوب بدقة هو تنفيذ الميزات التالية:
+
+1. سكربت تهيئة وتثبيت لغات البرمجة والبيئات كاملة (Comprehensive Server Environment Setup):
+عند تشغيل المنصة لأول مرة، يجب أن يقوم السيرفر تلقائياً بفحص وتثبيت كافة لغات البرمجة والبيئات ومديري الحزم والاعتمادات اللازمة لتشغيل وبناء أي أداة يتم تحميلها من GitHub. يجب أن يشمل السكربت تثبيت وتجهيز ما يلي بالكامل:
+- بيئة Python: تثبيت Python 3.x، ومدير الحزم pip3، وحزمة python3-venv لإنشاء بيئات معزولة لكل أداة لمنع تضارب المكتبات.
+- بيئة Go Language: تثبيت أحدث إصدار مستقر من Golang compiler لتشغيل أوامر البناء (go build / go install)، مع إعداد وضبط متغيرات البيئة والمسارات (GOPATH و GOROOT) تلقائياً في السيرفر ليتعرف النظام على الأدوات المبنية فوراً.
+- بيئة Rust: تثبيت بيئة Rust كاملة (مترجم rustc ومدير الحزم Cargo) لتشغيل أوامر التثبيت والبناء (cargo build --release / cargo install).
+- الحزم المساعدة وحزم النظام الأساسية: تثبيت Git (لاستنساخ المستودعات)، و Curl، و Wget، وحزم البناء الأساسية للينكس (build-essential, gcc, make, g++) لأن بعض الأدوات تحتاج لعمل Compiling محلي.
+- بيئة الحاويات المعزولة: تثبيت Docker و Docker-Compose لتشغيل الأدوات المعقدة أو التي تطلب حاويات مستقلة.
+
+2. آلية إضافة أداة جديدة ديناميكياً (Dynamic Add Tool):
+- عند إدخال اسم الأداة ورابط الـ GitHub (سواء كان رابط HTTPS أو SSH)، يقوم السيرفر بالتحقق من صحة الرابط (Sanitization) لمنع ثغرات Command Injection.
+- يقوم السيرفر بعمل `git clone` للأداة داخل مجلد مخصص على السيرفر.
+- يقوم السيرفر بفحص الملفات تلقائياً لمعرفة لغة البرمجة (مثال: إذا وجد requirements.txt أو .py فهي بايثون، إذا وجد go.mod فهي Go، إذا وجد cargo.toml فهي Rust) ويقوم بتثبيت اعتماداتها فوراً خلف الكواليس.
+
+3. صفحة تفاصيل الأداة الديناميكية (Tool Detail Modal/Page):
+عند الضغط على كرت أي أداة (مثل المظهر الموجود في الصورة)، يجب أن تظهر نافذة منبثقة (Modal) أو صفحة تعرض البيانات التالية بشكل حقيقي:
+- اسم الأداة والوصف (الوصف يتم جلبه تلقائياً من الـ Description الخاص بمستودع GitHub عبر الـ GitHub API).
+- لغة البرمجة التي تعمل عليها الأداة (المكتشفة تلقائياً أو المستخرجة من مستودع الأداة).
+- الإصدار الحالي المثبت (يتم قراءته من الـ Git Tag المحلي أو آخر Commit Hash).
+- تاريخ إنشاء المستودع وتاريخ آخر تحديث عليه في GitHub.
+
+4. زر التحديث الحقيقي والتلقائي (Live Update System):
+عند الضغط على زر "تحقق من التحديثات" (الموجود في كروت الأدوات بالصورة):
+- يقوم السيرفر بإرسال طلب (API Request) إلى مستودع الأداة الرسمي على GitHub لمقارنة الـ Commit SHA أو الـ Releases المحلية مع أحدث إصدار متوفر أونلاين.
+- إذا كانت الأداة محدثة: يعرض رسالة "الـنظام محدث بنسبة 100%".
+- إذا كان هناك تحديث: يقوم السيرفر تلقائياً بتشغيل أمر `git pull` (وإعادة بناء الأداة إذا كانت تحتاج لـ Go build أو Cargo build) وتتحدث البيانات فوراً.
+- إذا تم حذف المستودع أو توقفت الأداة: يقوم بتحديث حالة الكرت إلى Offline أو Warning.
+
+يرجى كتابة الكود البرمجي بشكل نظيف ومقسم (Modular Clean Code)، مع توفير مخطط قاعدة البيانات (Database Schema) المقترح لكروت الأدوات، وشرح كيفية ربط أزرار الـ Frontend (الموجودة في الصورة) مع الـ API Endpoints التي ستنشئها.

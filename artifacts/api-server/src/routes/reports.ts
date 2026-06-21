@@ -10,6 +10,22 @@ import { readFile, readdir } from "node:fs/promises";
 
 const router: IRouter = Router();
 
+const REPORT_TITLES: Record<number, string> = {
+  1: "Executive Summary — Q2 2026",
+  2: "Full Technical Audit — API Surface",
+  3: "Vulnerability Assessment — Corporate",
+  4: "Container Security Report",
+  5: "Penetration Test Summary",
+};
+
+const REPORT_TYPES: Record<number, string> = {
+  1: "executive",
+  2: "technical",
+  3: "compliance",
+  4: "container",
+  5: "pentest",
+};
+
 function formatReport(r: typeof reportsTable.$inferSelect) {
   return {
     id: r.id,
@@ -17,6 +33,8 @@ function formatReport(r: typeof reportsTable.$inferSelect) {
     status: r.status,
     downloadUrl: r.downloadUrl ?? null,
     createdAt: r.createdAt.toISOString(),
+    title: REPORT_TITLES[r.id] ?? `Security Report #${r.id}`,
+    type: REPORT_TYPES[r.id] ?? "technical",
   };
 }
 

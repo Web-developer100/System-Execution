@@ -147,20 +147,58 @@ function VulnerabilityDetail({ vuln, onClose, onValidate }: { vuln: Vulnerabilit
                   {/* Meta Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                      <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">CVSS</div>
-                      <div className="text-lg font-bold font-mono mt-0.5">—</div>
+                      <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">CVSS v3</div>
+                      <div className={`text-lg font-bold font-mono mt-0.5 ${
+                        parseFloat((vuln as any).cvssScore ?? "0") >= 9 ? "text-destructive" :
+                        parseFloat((vuln as any).cvssScore ?? "0") >= 7 ? "text-orange-500" :
+                        parseFloat((vuln as any).cvssScore ?? "0") >= 4 ? "text-yellow-500" : "text-muted-foreground"
+                      }`}>{(vuln as any).cvssScore ?? "N/A"}</div>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                       <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">CWE</div>
-                      <div className="text-sm font-mono mt-0.5 text-muted-foreground">—</div>
+                      <div className="text-sm font-mono mt-0.5 text-primary">
+                        {(vuln as any).cwe ? (
+                          <a href={`https://cwe.mitre.org/data/definitions/${(vuln as any).cwe.replace("CWE-","")}.html`} target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-1">
+                            {(vuln as any).cwe} <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        ) : "—"}
+                      </div>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
                       <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">CVE</div>
-                      <div className="text-sm font-mono mt-0.5 text-muted-foreground">—</div>
+                      <div className="text-sm font-mono mt-0.5">
+                        {(vuln as any).cve ? (
+                          <a href={`https://nvd.nist.gov/vuln/detail/${(vuln as any).cve}`} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                            {(vuln as any).cve} <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        ) : <span className="text-muted-foreground">N/A</span>}
+                      </div>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-                      <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">Confidence</div>
-                      <div className="text-sm font-mono mt-0.5">{vuln.aiValidated ? "High" : "Pending"}</div>
+                      <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">EPSS</div>
+                      <div className="text-sm font-mono mt-0.5 text-orange-500">{(vuln as any).epss ? `${Math.round(parseFloat((vuln as any).epss) * 100)}%` : "—"}</div>
+                    </div>
+                  </div>
+
+                  {/* OWASP / MITRE row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50 flex items-center gap-3">
+                      <div>
+                        <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">OWASP Category</div>
+                        <div className="text-sm font-mono mt-0.5 text-primary">{(vuln as any).owasp ?? "—"}</div>
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50 flex items-center gap-3">
+                      <div>
+                        <div className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">MITRE ATT&CK</div>
+                        <div className="text-sm font-mono mt-0.5">
+                          {(vuln as any).mitre ? (
+                            <a href={`https://attack.mitre.org/techniques/${(vuln as any).mitre}/`} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                              {(vuln as any).mitre} <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          ) : "—"}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
