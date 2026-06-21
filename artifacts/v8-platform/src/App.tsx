@@ -1,5 +1,4 @@
-import { useEffect } from "react";
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,30 +27,35 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       staleTime: 10_000,
+      refetchOnWindowFocus: false,
     },
   },
 });
 
+/**
+ * Guards a route — if no token in localStorage, redirect to /login immediately.
+ * Uses localStorage directly (not context) to avoid React state race conditions.
+ */
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated } = useAuth();
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setLocation("/login");
-    }
-  }, [isAuthenticated, setLocation]);
-
-  if (!isAuthenticated) return null;
-
+  const token = localStorage.getItem("v8_token");
+  if (!token) return <Redirect to="/login" />;
   return <Component />;
 }
 
-function Router() {
+function AppRoutes() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <Switch>
+      {/* Boot sequence → redirects to /dashboard if authenticated, else /login */}
       <Route path="/" component={BootLoader} />
-      <Route path="/login" component={Login} />
+
+      {/* Login: if already authenticated, skip to dashboard */}
+      <Route path="/login">
+        {isAuthenticated ? <Redirect to="/dashboard" /> : <Login />}
+      </Route>
+
+      {/* All protected routes wrapped in Layout */}
       <Route>
         <Layout>
           <Switch>
@@ -61,7 +65,8 @@ function Router() {
             <Route path="/proxies"><ProtectedRoute component={Proxies} /></Route>
             <Route path="/vulnerabilities"><ProtectedRoute component={Vulnerabilities} /></Route>
             <Route path="/reports"><ProtectedRoute component={Reports} /></Route>
-            <Route path="/settings(.*)"><ProtectedRoute component={SettingsPage} /></Route>
+            <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
+            <Route path="/settings/:tab"><ProtectedRoute component={SettingsPage} /></Route>
             <Route path="/marketplace"><ProtectedRoute component={Marketplace} /></Route>
             <Route path="/notifications"><ProtectedRoute component={NotificationsPage} /></Route>
             <Route path="/observability"><ProtectedRoute component={ObservabilityDashboard} /></Route>
@@ -83,7 +88,7 @@ function App() {
           <I18nProvider>
             <TooltipProvider>
               <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                <Router />
+                <AppRoutes />
               </WouterRouter>
               <Toaster />
             </TooltipProvider>

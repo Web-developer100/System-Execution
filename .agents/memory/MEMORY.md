@@ -1,2 +1,3 @@
 - [V8 Platform Auth](v8-platform-auth.md) — Auth context (AuthProvider) wraps App.tsx; admin=admin/admin123; token key in localStorage is "v8_token"
 - [V8 Platform Data](v8-platform-data.md) — DB seed state, tool categories, vulnerability enrichment, schedule seeding
+- [V8 Login Race Condition Fix](v8-login-race.md) — flushSync + ProtectedRoute localStorage check prevent redirect-before-state-update bug

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Technical Report — 0.0.0.1</title><style>
+    :root {
+      --primary: #22d3ee;
+      --secondary: #10b981;
+      --font: system-ui, -apple-system, sans-serif;
+      --header: V8 Neural Exploitation Platform;
+    }
+  
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#020617; color:#e2e8f0; font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; line-height:1.6; }
+  .container { max-width:1000px; margin:0 auto; padding:48px 24px; }
+  h1 { font-size:28px; font-weight:800; color:#22d3ee; text-transform:uppercase; letter-spacing:2px; }
+  h2 { font-size:16px; font-weight:700; color:#22d3ee; text-transform:uppercase; letter-spacing:1px; margin:32px 0 16px; padding-bottom:8px; border-bottom:1px solid #1e293b; }
+  h3 { font-size:13px; font-weight:600; color:#e2e8f0; margin:20px 0 8px; }
+  p { font-size:13px; color:#94a3b8; line-height:1.7; margin-bottom:12px; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:12px; }
+  th { padding:10px 14px; text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:1px; color:#64748b; border-bottom:1px solid #1e293b; font-family:monospace; }
+  td { padding:10px 14px; border-bottom:1px solid #1e293b; color:#94a3b8; }
+  pre { background:#000; border:1px solid #1e293b; padding:16px; font-size:11px; color:#22c55e; font-family:monospace; overflow-x:auto; white-space:pre-wrap; line-height:1.6; border-radius:4px; margin:8px 0; }
+  .meta-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin:16px 0; }
+  .meta-card { background:#0f172a; border:1px solid #1e293b; padding:14px; border-radius:4px; }
+  .meta-label { font-size:9px; color:#64748b; text-transform:uppercase; letter-spacing:1px; font-family:monospace; margin-bottom:4px; }
+  .meta-value { font-size:16px; font-weight:700; font-family:monospace; }
+  .finding-card { margin-bottom:16px; padding:16px; background:#0f172a; border:1px solid #1e293b; border-radius:6px; }
+  .finding-header { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+  .section { margin-bottom:32px; }
+  .chart-grid { display:flex; flex-wrap:wrap; gap:16px; justify-content:center; margin:16px 0; }
+  .chart-grid svg { max-width:100%; border-radius:6px; background:#0f172a; border:1px solid #1e293b; }
+  @media print { body { background:#fff; color:#000; } .container { max-width:100%; } }
+</style></head><body>
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #22d3ee;padding-bottom:16px;margin-bottom:32px;">
+    <div>
+      <div style="font-size:10px;letter-spacing:3px;color:#22d3ee;text-transform:uppercase;margin-bottom:4px;">V8 Neural Exploitation Platform</div>
+      <div style="font-size:16px;font-weight:700;color:#e2e8f0;">V8 Platform</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:10px;color:#64748b;font-family:monospace;">CL: INTERNAL</div>
+    </div>
+  </div>
+  <h1>Technical Security Report</h1>
+  <p style="font-size:12px;color:#64748b;font-family:monospace;">0.0.0.1 — 2026-06-21 06:48:43 UTC</p>
+
+  <div class="meta-grid">
+    <div class="meta-card"><div class="meta-label">Target</div><div class="meta-value" style="color:#22d3ee">0.0.0.1</div></div>
+    <div class="meta-card"><div class="meta-label">Findings</div><div class="meta-value" style="color:#e2e8f0">0</div></div>
+    <div class="meta-card"><div class="meta-label">Tools</div><div class="meta-value" style="color:#e2e8f0">nuclei, subfinder, sqlmap, httpx, sublist3r, seclists, afrog, rengine, gobuster, dirsearch, nikto, feroxbuster, commix, dalfox, jsluice, naabu, xnlinkfinder, paramspider, subzy, semgrep, cloud_enum, cariddi, reconftw, gopherus, trivy, ffuf, nmap</div></div>
+    <div class="meta-card"><div class="meta-label">Status</div><div class="meta-value" style="color:#22c55e">COMPLETED</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Severity Distribution</h2>
+    <div style="text-align:center;"></div>
+  </div>
+
+  <div class="section">
+    <h2>Tool Scope</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">nuclei</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">subfinder</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">sqlmap</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">httpx</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">sublist3r</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">seclists</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">afrog</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">rengine</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">gobuster</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">dirsearch</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">nikto</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">feroxbuster</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">commix</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">dalfox</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">jsluice</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">naabu</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">xnlinkfinder</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">paramspider</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">subzy</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">semgrep</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">cloud_enum</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">cariddi</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">reconftw</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">gopherus</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">trivy</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">ffuf</span><span style="background:#1e293b;color:#94a3b8;padding:3px 10px;font-size:11px;font-family:monospace;border-radius:2px;">nmap</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Detailed Findings (0)</h2>
+    <p>No vulnerabilities found.</p>
+  </div>
+
+  <div style="border-top:1px solid #1e293b;padding-top:16px;margin-top:32px;display:flex;justify-content:space-between;font-size:10px;color:#475569;font-family:monospace;">
+    <span>CONFIDENTIAL — V8 Security Assessment Report</span>
+    <span></span>
+  </div>
+</div></body></html>

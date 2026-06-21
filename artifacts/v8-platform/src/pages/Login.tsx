@@ -1,3 +1,4 @@
+import { flushSync } from "react-dom";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -5,7 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { useLogin } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Shield, Key, User, Languages } from "lucide-react";
+import { Shield, Key, User, Languages, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const APP_VERSION = "2.0.4";
@@ -29,13 +30,17 @@ export default function Login() {
     loginMut.mutate(
       { data: { username: username.trim(), password } },
       {
-        onSuccess: data => {
-          setToken(data.token);
+        onSuccess: (data) => {
+          // flushSync forces React to update state synchronously so
+          // isAuthenticated is true BEFORE setLocation triggers re-render
+          flushSync(() => {
+            setToken(data.token);
+          });
           setLocation("/dashboard");
         },
         onError: () => {
           setShake(true);
-          setTimeout(() => setShake(false), 500);
+          setTimeout(() => setShake(false), 600);
           toast({
             title: "ACCESS DENIED",
             description: "Invalid credentials. Authorization rejected.",
@@ -48,11 +53,20 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full bg-black flex flex-col items-center justify-center p-4 crt relative overflow-hidden">
-      {/* Background grid pattern */}
+      {/* Background grid */}
       <div
         className="absolute inset-0 opacity-5 pointer-events-none"
-        style={{ backgroundImage: "linear-gradient(#00ff41 1px, transparent 1px), linear-gradient(90deg, #00ff41 1px, transparent 1px)", backgroundSize: "40px 40px" }}
+        style={{
+          backgroundImage:
+            "linear-gradient(#00ff41 1px, transparent 1px), linear-gradient(90deg, #00ff41 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
       />
+
+      {/* Version top-left */}
+      <div className="absolute top-4 left-4 text-primary/20 font-mono text-xs uppercase tracking-widest">
+        V8_CORE v{APP_VERSION}
+      </div>
 
       {/* Lang toggle */}
       <div className="absolute top-4 right-4 z-20">
@@ -66,14 +80,11 @@ export default function Login() {
         </Button>
       </div>
 
-      {/* Version top-left */}
-      <div className="absolute top-4 left-4 text-primary/20 font-mono text-xs uppercase tracking-widest">
-        V8_CORE v{APP_VERSION}
-      </div>
-
       {/* Login Card */}
       <div
-        className={`w-full max-w-sm bg-black border border-primary/30 glow-box p-8 z-10 transition-transform ${shake ? "animate-shake" : ""}`}
+        className={`w-full max-w-sm bg-black border border-primary/30 glow-box p-8 z-10 transition-transform ${
+          shake ? "animate-shake" : ""
+        }`}
       >
         {/* Header */}
         <div className="flex flex-col items-center mb-8 text-center">
@@ -100,7 +111,7 @@ export default function Login() {
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/40" />
               <Input
                 value={username}
-                onChange={e => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
                 className="bg-black border-primary/30 text-primary pl-10 h-12 rounded-none focus-visible:ring-primary/50 focus-visible:border-primary font-mono"
                 data-testid="input-username"
@@ -117,7 +128,7 @@ export default function Login() {
               <Input
                 type="password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 className="bg-black border-primary/30 text-primary pl-10 h-12 rounded-none focus-visible:ring-primary/50 focus-visible:border-primary font-mono"
                 data-testid="input-password"
@@ -133,7 +144,7 @@ export default function Login() {
           >
             {loginMut.isPending ? (
               <span className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-black rounded-full animate-bounce" />
+                <Loader2 className="w-4 h-4 animate-spin" />
                 INITIALIZING...
               </span>
             ) : (
@@ -154,8 +165,8 @@ export default function Login() {
 
       {/* Bottom status bar */}
       <div className="absolute bottom-4 w-full flex justify-between px-6 text-[10px] font-mono text-primary/20 uppercase tracking-widest">
-        <span>SYSTEM_KERNEL_V{APP_VERSION}</span>
         <span>AES_QUANTUM_G</span>
+        <span>SYSTEM_KERNEL_V{APP_VERSION}</span>
       </div>
     </div>
   );
