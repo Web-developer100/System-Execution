@@ -64,8 +64,8 @@ export default function NotificationsPage() {
   const [readIds, setReadIds] = useState<Set<string>>(new Set(STATIC_SYSTEM_NOTIFICATIONS.map(n => n.id)));
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
-  const { data: scans, isLoading: scansLoading } = useGetScans({ query: { refetchInterval: 30000 } });
-  const { data: vulns, isLoading: vulnsLoading } = useGetVulnerabilities({ query: { refetchInterval: 30000 } });
+  const { data: scans, isLoading: scansLoading } = useGetScans();
+  const { data: vulns, isLoading: vulnsLoading } = useGetVulnerabilities();
 
   const isLoading = scansLoading || vulnsLoading;
 
@@ -109,8 +109,8 @@ export default function NotificationsPage() {
     }
 
     if (vulns) {
-      const criticals = (vulns as Vulnerability[]).filter((v: Vulnerability) => v.severity === "critical" && v.status === "open");
-      const highs = (vulns as Vulnerability[]).filter((v: Vulnerability) => v.severity === "high" && v.status === "open");
+      const criticals = (vulns as Vulnerability[]).filter((v: Vulnerability) => v.severity === "critical" && v.status !== "false_positive");
+      const highs = (vulns as Vulnerability[]).filter((v: Vulnerability) => v.severity === "high" && v.status !== "false_positive");
       const aiValidated = (vulns as Vulnerability[]).filter((v: Vulnerability) => v.aiValidated);
 
       for (const vuln of criticals) {
@@ -119,7 +119,7 @@ export default function NotificationsPage() {
           type: "vulnerability",
           title: `Critical Finding: ${vuln.title}`,
           description: `${vuln.url} — CVSS Critical severity. Immediate remediation required.`,
-          timestamp: new Date(vuln.discoveredAt),
+          timestamp: vuln.discoveredAt ? new Date(vuln.discoveredAt) : new Date(),
           read: false,
           severity: "critical",
         });
@@ -131,7 +131,7 @@ export default function NotificationsPage() {
           type: "vulnerability",
           title: `High Severity: ${vuln.title}`,
           description: `${vuln.url} — High severity finding awaiting remediation.`,
-          timestamp: new Date(vuln.discoveredAt),
+          timestamp: vuln.discoveredAt ? new Date(vuln.discoveredAt) : new Date(),
           read: true,
           severity: "high",
         });

@@ -17,6 +17,9 @@ import auditRouter from "./audit";
 import schedulingRouter from "./scheduling";
 import usersRouter from "./users";
 import notificationsRouter from "./notifications";
+import docsRouter from "./docs";
+import billingRouter from "./billing";
+import healthMonitoringRouter from "./health-monitoring";
 
 const router: IRouter = Router();
 
@@ -38,5 +41,8 @@ router.use(observabilityRouter);
 router.use(wordlistRouter);
 router.use(auditRouter);
 router.use(schedulingRouter);
+router.use(docsRouter);
+router.use(billingRouter);
+router.use(healthMonitoringRouter);
 
 export default router;

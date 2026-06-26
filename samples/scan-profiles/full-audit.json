@@ -1,0 +1,63 @@
+{
+  "name": "Full Security Audit",
+  "version": "1.0.0",
+  "description": "Comprehensive security audit covering all attack surfaces including web, network, API, and infrastructure scanning.",
+  "category": "full_audit",
+  "risk_level": "high",
+  "estimated_duration": "30-60 minutes per target",
+  "target_types": ["url", "domain", "ip", "cidr"],
+  "pipeline": [
+    {
+      "phase": 1,
+      "name": "Reconnaissance",
+      "description": "Discover assets, subdomains, and exposed services",
+      "tools": ["subfinder", "httpx", "naabu", "dnsx"],
+      "timeout_seconds": 300,
+      "parallel": true
+    },
+    {
+      "phase": 2,
+      "name": "Vulnerability Scanning",
+      "description": "Scan for known CVEs and common vulnerabilities",
+      "tools": ["nuclei", "nikto", "wpscan", "joomscan"],
+      "timeout_seconds": 600,
+      "parallel": true
+    },
+    {
+      "phase": 3,
+      "name": "Web Application Testing",
+      "description": "Deep web application security testing",
+      "tools": ["ffuf", "katana", "gau", "gf", "waybackurls"],
+      "timeout_seconds": 600,
+      "parallel": true
+    },
+    {
+      "phase": 4,
+      "name": "Exploitation Verification",
+      "description": "Verify discovered vulnerabilities with safe exploits",
+      "tools": ["sqlmap", "xsstrike", "commix", "jwt_tool"],
+      "timeout_seconds": 900,
+      "parallel": false
+    },
+    {
+      "phase": 5,
+      "name": "Analysis & Reporting",
+      "description": "Aggregate findings and generate comprehensive report",
+      "tools": ["ai-analysis", "false-positive-check", "report-generator"],
+      "timeout_seconds": 300,
+      "parallel": false
+    }
+  ],
+  "ai_analysis": {
+    "enabled": true,
+    "confidence_threshold": 0.75,
+    "verification_required": true,
+    "reasoning_trace": true
+  },
+  "reporting": {
+    "formats": ["html", "pdf", "docx", "sarif", "json"],
+    "include_evidence": true,
+    "include_remediation": true,
+    "include_ai_analysis": true
+  }
+}

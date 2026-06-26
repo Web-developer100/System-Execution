@@ -45,12 +45,28 @@ const RUNTIMES: RuntimeDescriptor[] = [
     optional: false,
   },
   {
+    name: "wget",
+    checkCmds: [{ cmd: "wget", args: ["--version"] }],
+    installCmds: os.platform() === "win32"
+      ? [{ cmd: "winget", args: ["install", "GNU.Wget"] }]
+      : [{ cmd: "sh", args: ["-c", "apt-get install -y -qq wget"], timeout: 60_000 }],
+    optional: false,
+  },
+  {
     name: "git",
     checkCmds: [{ cmd: "git", args: ["--version"] }],
     installCmds: os.platform() === "win32"
       ? [{ cmd: "winget", args: ["install", "Git.Git"] }]
       : [{ cmd: "sh", args: ["-c", "apt-get install -y -qq git"], timeout: 60_000 }],
     optional: false,
+  },
+  {
+    name: "git-lfs",
+    checkCmds: [{ cmd: "git-lfs", args: ["--version"] }],
+    installCmds: [
+      { cmd: "sh", args: ["-c", "curl -fsSL https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install -y -qq git-lfs && git lfs install"], timeout: 120_000 },
+    ],
+    optional: true,
   },
   {
     name: "Python 3",
@@ -108,6 +124,12 @@ const RUNTIMES: RuntimeDescriptor[] = [
     optional: false,
   },
   {
+    name: "Yarn",
+    checkCmds: [{ cmd: "yarn", args: ["--version"] }],
+    installCmds: [{ cmd: "npm", args: ["install", "-g", "yarn"], timeout: 60_000 }],
+    optional: true,
+  },
+  {
     name: "pnpm",
     checkCmds: [{ cmd: "pnpm", args: ["--version"] }],
     installCmds: [{ cmd: "npm", args: ["install", "-g", "pnpm"], timeout: 60_000 }],
@@ -117,6 +139,42 @@ const RUNTIMES: RuntimeDescriptor[] = [
     name: "Java JDK",
     checkCmds: [{ cmd: "java", args: ["-version"] }],
     installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq default-jdk"], timeout: 120_000 }],
+    optional: true,
+  },
+  {
+    name: "Maven",
+    checkCmds: [{ cmd: "mvn", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq maven"], timeout: 60_000 }],
+    optional: true,
+  },
+  {
+    name: "Gradle",
+    checkCmds: [{ cmd: "gradle", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "curl -fsSL https://services.gradle.org/distributions/gradle-8.5-bin.zip | gunzip | tar -xC /opt && ln -sf /opt/gradle-8.5/bin/gradle /usr/local/bin/gradle"], timeout: 180_000 }],
+    optional: true,
+  },
+  {
+    name: "PHP",
+    checkCmds: [{ cmd: "php", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq php-cli php-xml php-mbstring"], timeout: 60_000 }],
+    optional: true,
+  },
+  {
+    name: "Composer",
+    checkCmds: [{ cmd: "composer", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "php -r 'copy(\"https://getcomposer.org/installer\", \"/tmp/composer-setup.php\");' && php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer"], timeout: 120_000 }],
+    optional: true,
+  },
+  {
+    name: "Ruby",
+    checkCmds: [{ cmd: "ruby", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq ruby-full"], timeout: 120_000 }],
+    optional: true,
+  },
+  {
+    name: "Perl",
+    checkCmds: [{ cmd: "perl", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq perl"], timeout: 60_000 }],
     optional: true,
   },
   {
@@ -132,14 +190,42 @@ const RUNTIMES: RuntimeDescriptor[] = [
     optional: false,
   },
   {
-    name: "Docker",
+    name: "LLVM / Clang",
     checkCmds: [
-      { cmd: "docker", args: ["--version"] },
+      { cmd: "clang", args: ["--version"] },
+      { cmd: "llvm-config", args: ["--version"] },
     ],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq llvm clang lldb lld"], timeout: 180_000 }],
+    optional: true,
+  },
+  {
+    name: "OpenSSL",
+    checkCmds: [{ cmd: "openssl", args: ["version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq openssl libssl-dev"], timeout: 60_000 }],
+    optional: false,
+  },
+  {
+    name: "Docker",
+    checkCmds: [{ cmd: "docker", args: ["--version"] }],
     installCmds: os.platform() === "win32"
       ? [{ cmd: "winget", args: ["install", "Docker.DockerDesktop"], timeout: 300_000 }]
       : [{ cmd: "sh", args: ["-c", "curl -fsSL https://get.docker.com | bash"], timeout: 180_000 }],
     optional: false,
+  },
+  {
+    name: "Docker Compose",
+    checkCmds: [
+      { cmd: "docker", args: ["compose", "version"] },
+      { cmd: "docker-compose", args: ["--version"] },
+    ],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq docker-compose-plugin"], timeout: 60_000 }],
+    optional: true,
+  },
+  {
+    name: "Docker Buildx",
+    checkCmds: [{ cmd: "docker", args: ["buildx", "version"] }],
+    installCmds: [],  // Included with Docker 19.03+
+    optional: true,
   },
   {
     name: "Nmap",
@@ -148,12 +234,91 @@ const RUNTIMES: RuntimeDescriptor[] = [
     optional: true,
   },
   {
-    name: "jq / yq",
+    name: "SQLite",
+    checkCmds: [{ cmd: "sqlite3", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq sqlite3"], timeout: 60_000 }],
+    optional: true,
+  },
+  {
+    name: "PostgreSQL Client",
     checkCmds: [
-      { cmd: "jq", args: ["--version"] },
+      { cmd: "psql", args: ["--version"] },
+      { cmd: "pg_isready", args: [] },
     ],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq postgresql-client"], timeout: 60_000 }],
+    optional: true,
+  },
+  {
+    name: "Redis Client",
+    checkCmds: [{ cmd: "redis-cli", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq redis-tools"], timeout: 60_000 }],
+    optional: true,
+  },
+  {
+    name: "kubectl",
+    checkCmds: [{ cmd: "kubectl", args: ["version", "--client"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "curl -LO \"https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl\" && chmod +x kubectl && mv kubectl /usr/local/bin/"], timeout: 120_000 }],
+    optional: true,
+  },
+  {
+    name: "Helm",
+    checkCmds: [{ cmd: "helm", args: ["version", "--short"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"], timeout: 120_000 }],
+    optional: true,
+  },
+  {
+    name: "Terraform",
+    checkCmds: [{ cmd: "terraform", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg && echo \"deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main\" | tee /etc/apt/sources.list.d/hashicorp.list && apt-get update && apt-get install -y -qq terraform"], timeout: 180_000 }],
+    optional: true,
+  },
+  {
+    name: "AWS CLI",
+    checkCmds: [{ cmd: "aws", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o /tmp/awscliv2.zip && unzip -q /tmp/awscliv2.zip -d /tmp && /tmp/aws/install --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli"], timeout: 180_000 }],
+    optional: true,
+  },
+  {
+    name: "Azure CLI",
+    checkCmds: [{ cmd: "az", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "curl -fsSL https://aka.ms/InstallAzureCli | bash"], timeout: 180_000 }],
+    optional: true,
+  },
+  {
+    name: "Google Cloud SDK",
+    checkCmds: [{ cmd: "gcloud", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir=/usr/local/gcloud"], timeout: 180_000 }],
+    optional: true,
+  },
+  {
+    name: "jq",
+    checkCmds: [{ cmd: "jq", args: ["--version"] }],
     installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq jq"], timeout: 60_000 }],
     optional: true,
+  },
+  {
+    name: "yq",
+    checkCmds: [{ cmd: "yq", args: ["--version"] }],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq yq"], timeout: 60_000 }],
+    optional: true,
+  },
+  {
+    name: "zip / unzip",
+    checkCmds: [
+      { cmd: "zip", args: ["--version"] },
+      { cmd: "unzip", args: ["--version"] },
+    ],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq zip unzip"], timeout: 60_000 }],
+    optional: false,
+  },
+  {
+    name: "tar / gzip",
+    checkCmds: [
+      { cmd: "tar", args: ["--version"] },
+      { cmd: "gzip", args: ["--version"] },
+    ],
+    installCmds: [{ cmd: "sh", args: ["-c", "apt-get install -y -qq tar gzip"], timeout: 60_000 }],
+    optional: false,
   },
 ];
 

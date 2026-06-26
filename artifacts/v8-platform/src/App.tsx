@@ -20,6 +20,12 @@ import NotificationsPage from "@/pages/Notifications";
 import ObservabilityDashboard from "@/pages/ObservabilityDashboard";
 import AuditLogs from "@/pages/AuditLogs";
 import Scheduling from "@/pages/Scheduling";
+import TracingExplorer from "@/pages/TracingExplorer";
+import LogsExplorer from "@/pages/LogsExplorer";
+import AlertsManagement from "@/pages/AlertsManagement";
+import BackupMonitoring from "@/pages/BackupMonitoring";
+import RetentionPolicies from "@/pages/RetentionPolicies";
+import DashboardViewer from "@/pages/DashboardViewer";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
 const queryClient = new QueryClient({
@@ -70,6 +76,12 @@ function AppRoutes() {
             <Route path="/marketplace"><ProtectedRoute component={Marketplace} /></Route>
             <Route path="/notifications"><ProtectedRoute component={NotificationsPage} /></Route>
             <Route path="/observability"><ProtectedRoute component={ObservabilityDashboard} /></Route>
+            <Route path="/observability/tracing"><ProtectedRoute component={TracingExplorer} /></Route>
+            <Route path="/observability/logs"><ProtectedRoute component={LogsExplorer} /></Route>
+            <Route path="/observability/alerts"><ProtectedRoute component={AlertsManagement} /></Route>
+            <Route path="/observability/dashboards"><ProtectedRoute component={DashboardViewer} /></Route>
+            <Route path="/observability/backups"><ProtectedRoute component={BackupMonitoring} /></Route>
+            <Route path="/observability/retention"><ProtectedRoute component={RetentionPolicies} /></Route>
             <Route path="/audit"><ProtectedRoute component={AuditLogs} /></Route>
             <Route path="/scheduling"><ProtectedRoute component={Scheduling} /></Route>
             <Route component={NotFound} />

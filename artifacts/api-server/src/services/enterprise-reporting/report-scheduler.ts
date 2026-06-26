@@ -249,6 +249,7 @@ export class ReportScheduler {
       deliveryMethods: params.deliveryMethods ?? [],
       deliveryConfig: params.deliveryConfig ?? {},
       enabled: params.enabled ?? true,
+      retentionCount: 10,
       lastGenerated: null,
       nextGeneration: null,
       createdAt: now,

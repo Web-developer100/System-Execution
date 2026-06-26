@@ -1,0 +1,48 @@
+{
+  "name": "Quick Vulnerability Scan",
+  "version": "1.0.0",
+  "description": "Fast targeted scan for critical and high-severity vulnerabilities. Suitable for CI/CD pipeline integration or quick health checks.",
+  "category": "quick_scan",
+  "risk_level": "medium",
+  "estimated_duration": "5-10 minutes per target",
+  "target_types": ["url", "domain"],
+  "ai_analysis": {
+    "enabled": false,
+    "verification_required": false
+  },
+  "pipeline": [
+    {
+      "phase": 1,
+      "name": "Rapid Recon",
+      "description": "Quick asset discovery and technology fingerprinting",
+      "tools": ["httpx", "nuclei"],
+      "timeout_seconds": 120,
+      "parallel": true
+    },
+    {
+      "phase": 2,
+      "name": "Critical Vulnerability Check",
+      "description": "Scan for critical and high-severity CVEs only",
+      "tools": ["nuclei"],
+      "timeout_seconds": 300,
+      "parallel": false,
+      "tool_args": {
+        "nuclei": "-severity critical,high -tags cve"
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Summary Report",
+      "description": "Generate quick summary of findings",
+      "tools": ["report-generator"],
+      "timeout_seconds": 60,
+      "parallel": false
+    }
+  ],
+  "reporting": {
+    "formats": ["html", "json"],
+    "include_evidence": false,
+    "include_remediation": false,
+    "include_ai_analysis": false
+  }
+}

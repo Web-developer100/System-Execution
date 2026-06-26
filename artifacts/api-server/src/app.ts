@@ -16,8 +16,15 @@ import { alertingEngine } from "./services/observability/alerting-engine";
 import { eventStream } from "./services/observability/event-stream";
 import { anomalyDetector } from "./services/observability/anomaly-detector";
 import { retentionManager } from "./services/observability/retention-manager";
+import { tracingService } from "./services/observability/tracing";
+import { backupMonitor } from "./services/observability/backup-monitor";
+import { auditTrailService } from "./services/observability/audit-trail";
 import { environmentProvisioning } from "./services/environment-provisioning";
 import { ensureWordlistFile } from "./lib/wordlist-resolver";
+import { tracingMiddleware } from "./middlewares/tracing";
+import { errorHandler, notFoundHandler } from "./middlewares/error-handler";
+import { csrfProtection, csrfTokenMiddleware } from "./middlewares/csrf";
+import cookieParser from "cookie-parser";
 
 // Warn if JWT_SECRET is using the development default
 const jwtSecret = process.env["JWT_SECRET"];
@@ -108,6 +115,8 @@ setImmediate(async () => {
     registerDefaultHealthChecks();
     alertingEngine.initialize();
     anomalyDetector.initialize();
+    tracingService.clearTraces(); // Start with clean trace state
+    backupMonitor.initialize();
     healthRegistry.markStartupComplete();
     logger.info("[BOOT] Observability platform initialized");
   } catch (err) {
@@ -186,8 +195,13 @@ app.use(
   }),
 );
 
+app.use(cookieParser());
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+// ── CSRF Protection ─────────────────────────────────────────────────────────
+app.use("/api", csrfTokenMiddleware);
+app.use("/api", csrfProtection);
 
 // ── Rate Limiting ────────────────────────────────────────────────────────────
 // Note: generalLimiter at /api is intentionally broad. Auth/heavy paths
@@ -212,11 +226,15 @@ app.use("/api", (req: Request, res: Response, next: NextFunction) => {
   return requireAuth(req, res, next);
 });
 
+// Apply tracing middleware for distributed tracing
+app.use("/api", tracingMiddleware);
+
 app.use("/api", router);
 
-// 404 handler for unmatched /api routes
-app.use("/api", (_req: Request, res: Response) => {
-  res.status(404).json({ error: "Not Found" });
-});
+// 404 handler for unmatched routes — must be AFTER the router, BEFORE the error handler
+app.use("/api", notFoundHandler);
+
+// Global error handler (must be registered last)
+app.use(errorHandler);
 
 export default app;

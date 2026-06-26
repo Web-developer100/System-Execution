@@ -18,11 +18,26 @@ import type { AlertRule, AlertFiring, AlertSeverity, AlertRuleType } from "./typ
 import { eventStream } from "./event-stream";
 import { logger } from "../../lib/logger";
 
+// ── Maintenance Window ─────────────────────────────────────────────────────
+
+export interface MaintenanceWindow {
+  id: string;
+  name: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+  createdBy: string;
+  createdAt: string;
+  ruleFilters: string[] | null; // null = all rules, otherwise rule IDs
+  enabled: boolean;
+}
+
 // ── In-Memory Store ────────────────────────────────────────────────────────
 
 const rules = new Map<string, AlertRule>();
 const firings = new Map<string, AlertFiring>();
 const metricValues = new Map<string, number[]>();
+const maintenanceWindows = new Map<string, MaintenanceWindow>();
 
 // ── Alerting Engine ────────────────────────────────────────────────────────
 
@@ -203,6 +218,11 @@ export class AlertingEngine {
         break;
     }
 
+    // Skip if in maintenance window
+    if (this.isInMaintenanceWindow(rule.id)) {
+      return;
+    }
+
     if (shouldFire) {
       this.fireAlert(rule, currentValue);
     } else {
@@ -247,6 +267,56 @@ export class AlertingEngine {
     });
 
     logger.warn({ alertId: alert.id, rule: rule.name, value, threshold: rule.threshold, severity: rule.severity }, "[ALERTS] Firing");
+  }
+
+  // ── Maintenance Window Management ────────────────────────────────────────
+
+  getMaintenanceWindows(): MaintenanceWindow[] {
+    return [...maintenanceWindows.values()];
+  }
+
+  getMaintenanceStatus(): { active: boolean; activeWindows: MaintenanceWindow[] } {
+    const now = Date.now();
+    const active = [...maintenanceWindows.values()].filter(w => {
+      if (!w.enabled) return false;
+      const start = new Date(w.startTime).getTime();
+      const end = new Date(w.endTime).getTime();
+      return now >= start && now <= end;
+    });
+    return { active: active.length > 0, activeWindows: active };
+  }
+
+  addMaintenanceWindow(window: Omit<MaintenanceWindow, "id" | "createdAt">): MaintenanceWindow {
+    const newWindow: MaintenanceWindow = {
+      ...window,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+    };
+    maintenanceWindows.set(newWindow.id, newWindow);
+    logger.info({ windowId: newWindow.id, name: newWindow.name }, "[ALERTS] Maintenance window added");
+    return newWindow;
+  }
+
+  updateMaintenanceWindow(id: string, updates: Partial<MaintenanceWindow>): MaintenanceWindow | null {
+    const existing = maintenanceWindows.get(id);
+    if (!existing) return null;
+    Object.assign(existing, updates);
+    return existing;
+  }
+
+  removeMaintenanceWindow(id: string): boolean {
+    return maintenanceWindows.delete(id);
+  }
+
+  isInMaintenanceWindow(ruleId: string): boolean {
+    const now = Date.now();
+    return [...maintenanceWindows.values()].some(w => {
+      if (!w.enabled) return false;
+      if (w.ruleFilters !== null && !w.ruleFilters.includes(ruleId)) return false;
+      const start = new Date(w.startTime).getTime();
+      const end = new Date(w.endTime).getTime();
+      return now >= start && now <= end;
+    });
   }
 
   // ── Default Rules ────────────────────────────────────────────────────────

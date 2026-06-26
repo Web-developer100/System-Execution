@@ -1,0 +1,67 @@
+{
+  "name": "API Security Assessment",
+  "version": "1.0.0",
+  "description": "Specialized API security testing focusing on OWASP API Security Top 10, authentication, authorization, and data exposure risks.",
+  "category": "api_security",
+  "risk_level": "high",
+  "estimated_duration": "15-30 minutes per endpoint",
+  "target_types": ["url"],
+  "pipeline": [
+    {
+      "phase": 1,
+      "name": "API Discovery & Documentation",
+      "description": "Discover API endpoints and generate OpenAPI spec",
+      "tools": ["httpx", "katana", "waybackurls"],
+      "timeout_seconds": 180,
+      "parallel": true
+    },
+    {
+      "phase": 2,
+      "name": "Authentication Testing",
+      "description": "Test JWT, OAuth, API key, and session management",
+      "tools": ["nuclei", "jwt_tool"],
+      "timeout_seconds": 300,
+      "parallel": true,
+      "tool_args": {
+        "nuclei": "-tags api,auth,jwt",
+        "jwt_tool": "-T"
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Injection & Bypass Testing",
+      "description": "SQL injection, NoSQL injection, parameter tampering, IDOR, SSRF",
+      "tools": ["sqlmap", "nuclei", "ffuf"],
+      "timeout_seconds": 600,
+      "parallel": false
+    },
+    {
+      "phase": 4,
+      "name": "Rate Limiting & Abuse Testing",
+      "description": "Test rate limiting, brute force protections, and abuse controls",
+      "tools": ["ffuf", "nuclei"],
+      "timeout_seconds": 300,
+      "parallel": true
+    },
+    {
+      "phase": 5,
+      "name": "API Security Report",
+      "description": "Generate OWASP API Security Top 10 mapped report",
+      "tools": ["ai-analysis", "report-generator"],
+      "timeout_seconds": 180,
+      "parallel": false
+    }
+  ],
+  "ai_analysis": {
+    "enabled": true,
+    "confidence_threshold": 0.8,
+    "verification_required": true,
+    "reasoning_trace": true
+  },
+  "reporting": {
+    "formats": ["html", "json", "sarif"],
+    "include_evidence": true,
+    "include_remediation": true,
+    "framework_mappings": ["owasp-api-top-10", "cwe"]
+  }
+}

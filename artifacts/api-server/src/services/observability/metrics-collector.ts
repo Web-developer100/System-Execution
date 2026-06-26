@@ -171,82 +171,143 @@ export function registerDefaultMetrics(): void {
     metricsCollector.register(name, help, type);
   };
 
-  // Infrastructure
+  // ── Infrastructure Metrics ───────────────────────────────────────────────
   register("cpu_usage_percent", "CPU usage percentage", "gauge");
   register("memory_usage_bytes", "Memory usage in bytes", "gauge");
   register("memory_heap_bytes", "Heap memory in bytes", "gauge");
   register("disk_usage_bytes", "Disk usage in bytes", "gauge");
   register("disk_free_bytes", "Free disk space in bytes", "gauge");
+  register("disk_iops", "Disk IOPS (input/output operations per second)", "gauge");
+  register("disk_read_bytes", "Disk read bytes", "counter");
+  register("disk_write_bytes", "Disk write bytes", "counter");
   register("network_bytes_in", "Network bytes received", "counter");
   register("network_bytes_out", "Network bytes transmitted", "counter");
+  register("network_errors_in", "Network receive errors", "counter");
+  register("network_errors_out", "Network transmit errors", "counter");
+  register("network_bandwidth_bps", "Network bandwidth usage in bps", "gauge");
   register("open_connections", "Open network connections", "gauge");
+  register("socket_count", "Total open sockets", "gauge");
   register("active_handles", "Active libuv handles", "gauge");
+  register("load_average_1m", "1-minute load average", "gauge");
+  register("load_average_5m", "5-minute load average", "gauge");
+  register("load_average_15m", "15-minute load average", "gauge");
+  register("container_count", "Total container count", "gauge");
+  register("pod_count", "Total pod count", "gauge");
+  register("cluster_health_score", "Cluster health score 0-100", "gauge");
+  register("node_health_score", "Node health score 0-100", "gauge");
+  register("auto_scaling_events_total", "Auto-scaling events", "counter");
 
-  // Application
+  // ── Application Metrics ──────────────────────────────────────────────────
   register("http_requests_total", "Total HTTP requests by method and route", "counter");
   register("http_request_duration_ms", "HTTP request duration in ms", "histogram");
+  register("http_requests_per_second", "HTTP requests per second", "gauge");
   register("http_errors_total", "HTTP errors by status code", "counter");
+  register("http_success_rate", "HTTP success rate as percentage", "gauge");
+  register("api_avg_response_time_ms", "Average API response time in ms", "gauge");
   register("auth_success_total", "Successful authentications", "counter");
   register("auth_failure_total", "Failed authentications", "counter");
+  register("scan_duration_ms", "Scan duration in ms", "histogram");
+  register("scan_verification_duration_ms", "Verification duration in ms", "histogram");
+  register("scan_concurrent", "Concurrent active scans", "gauge");
+  register("scan_schedule_count", "Active scan schedules", "gauge");
+  register("plugin_execution_duration_ms", "Plugin execution duration in ms", "histogram");
+  register("plugin_errors_total", "Plugin execution errors", "counter");
+  register("queue_processing_time_ms", "Queue job processing time in ms", "histogram");
+  register("queue_delay_ms", "Queue job delay in ms", "histogram");
+  register("notification_delivery_duration_ms", "Notification delivery duration in ms", "histogram");
+  register("report_generation_duration_ms", "Report generation duration in ms", "histogram");
+  register("ai_request_duration_ms", "AI request duration in ms", "histogram");
 
-  // Security
+  // ── Security Metrics ─────────────────────────────────────────────────────
   register("vulnerabilities_total", "Vulnerabilities by severity and status", "gauge");
+  register("vulnerabilities_critical", "Critical severity vulnerabilities", "gauge");
+  register("vulnerabilities_high", "High severity vulnerabilities", "gauge");
   register("false_positive_rate", "False positive rate as percentage", "gauge");
   register("verified_findings_total", "Verified findings by verification method", "counter");
+  register("attack_surface_size", "Attack surface size (endpoints, services)", "gauge");
+  register("risk_score", "Overall risk score 0-100", "gauge");
+  register("security_score", "Overall security score 0-100", "gauge");
+  register("compliance_score", "Compliance score 0-100", "gauge");
   register("blocked_requests_total", "Blocked requests by rule", "counter");
+  register("api_abuse_attempts_total", "API abuse attempts detected", "counter");
   register("brute_force_attempts_total", "Brute force attempts blocked", "counter");
+  register("privilege_escalation_attempts_total", "Privilege escalation attempts blocked", "counter");
+  register("suspicious_activity_total", "Suspicious activity events", "counter");
+  register("unauthorized_access_attempts_total", "Unauthorized access attempts", "counter");
+  register("plugin_security_alerts_total", "Plugin security alerts", "counter");
 
-  // Worker
+  // ── Worker Metrics ───────────────────────────────────────────────────────
   register("workers_total", "Workers by status", "gauge");
   register("worker_task_duration_ms", "Worker task duration in ms", "histogram");
   register("worker_tasks_total", "Worker tasks by result", "counter");
+  register("worker_tasks_completed", "Worker tasks completed", "counter");
+  register("worker_tasks_failed", "Worker tasks failed", "counter");
+  register("worker_task_completion_rate", "Worker task completion rate as percentage", "gauge");
+  register("worker_task_failure_rate", "Worker task failure rate as percentage", "gauge");
   register("worker_cpu_percent", "Worker CPU usage percentage", "gauge");
   register("worker_memory_bytes", "Worker memory usage in bytes", "gauge");
+  register("worker_utilization", "Worker utilization percentage", "gauge");
 
-  // Queue
+  // ── Queue Metrics ────────────────────────────────────────────────────────
   register("queue_depth", "Queue depth by queue name and state", "gauge");
-  register("queue_processing_time_ms", "Queue job processing time in ms", "histogram");
   register("queue_retries_total", "Queue job retries", "counter");
   register("queue_dead_letter_total", "Dead letter queue count", "counter");
-  register("queue_delay_ms", "Queue job delay in ms", "histogram");
+  register("queue_active_jobs", "Active queue jobs", "gauge");
+  register("queue_consumed_total", "Queue jobs consumed", "counter");
 
-  // Plugin
+  // ── Plugin Metrics ───────────────────────────────────────────────────────
   register("plugins_total", "Plugins by status and category", "gauge");
-  register("plugin_execution_duration_ms", "Plugin execution duration in ms", "histogram");
-  register("plugin_errors_total", "Plugin execution errors", "counter");
+  register("plugins_active", "Active plugins", "gauge");
+  register("installed_tools_total", "Installed security tools", "gauge");
   register("plugin_health_score", "Plugin health score 0-100", "gauge");
 
-  // AI
+  // ── AI Engine Metrics ────────────────────────────────────────────────────
   register("ai_requests_total", "AI analysis requests by provider", "counter");
-  register("ai_request_duration_ms", "AI request duration in ms", "histogram");
   register("ai_cache_hits_total", "AI cache hits", "counter");
   register("ai_cache_misses_total", "AI cache misses", "counter");
+  register("ai_cache_hit_rate", "AI cache hit rate as percentage", "gauge");
   register("ai_errors_total", "AI request errors", "counter");
   register("ai_rate_limit_remaining", "Remaining AI rate limit", "gauge");
-
-  // Database
-  register("db_queries_total", "Database queries by type", "counter");
-  register("db_query_duration_ms", "Database query duration in ms", "histogram");
-  register("db_connections_active", "Active database connections", "gauge");
-  register("db_connections_idle", "Idle database connections", "gauge");
-  register("db_errors_total", "Database errors", "counter");
-
-  // Scan
-  register("scans_total", "Scans by status", "counter");
-  register("scan_duration_ms", "Scan duration in ms", "histogram");
-  register("scans_concurrent", "Concurrent active scans", "gauge");
-
-  // Report
-  register("reports_total", "Reports generated by category and format", "counter");
-  register("report_generation_duration_ms", "Report generation duration in ms", "histogram");
-
-  // AI Engine sub-metrics
+  register("ai_processing_time_ms", "AI processing time in ms", "histogram");
   register("ai_engine_requests_total", "AI engine sub-engine requests", "counter");
   register("ai_engine_processing_time_ms", "AI engine sub-engine processing time", "histogram");
   register("ai_correlations_found", "Vulnerability correlations detected", "counter");
   register("ai_attack_chains_detected", "Attack chains detected", "counter");
   register("ai_remediations_generated", "Remediation patches generated", "counter");
   register("ai_false_positives_filtered", "False positives filtered out", "counter");
+
+  // ── Database Metrics ─────────────────────────────────────────────────────
+  register("db_queries_total", "Database queries by type", "counter");
+  register("db_query_duration_ms", "Database query duration in ms", "histogram");
+  register("db_connections_active", "Active database connections", "gauge");
+  register("db_connections_idle", "Idle database connections", "gauge");
+  register("db_connection_pool_utilization", "Database connection pool utilization percentage", "gauge");
+  register("db_errors_total", "Database errors", "counter");
+
+  // ── Scan Metrics ─────────────────────────────────────────────────────────
+  register("scans_total", "Scans by status", "counter");
+  register("scans_running", "Running scans", "gauge");
+  register("scans_completed", "Completed scans", "counter");
+  register("scans_failed", "Failed scans", "counter");
+  register("scans_in_queue", "Scans waiting in queue", "gauge");
+  register("scans_findings_total", "Total findings across all scans", "gauge");
+
+  // ── Report Metrics ───────────────────────────────────────────────────────
+  register("reports_total", "Reports generated by category and format", "counter");
+  register("reports_pending", "Reports pending generation", "gauge");
+
+  // ── Storage Metrics ──────────────────────────────────────────────────────
+  register("storage_used_bytes", "Storage used in bytes", "gauge");
+  register("storage_free_bytes", "Storage free in bytes", "gauge");
+  register("storage_usage_percent", "Storage usage percentage", "gauge");
+
+  // ── Backup Metrics ───────────────────────────────────────────────────────
+  register("backups_total", "Backups by type and status", "counter");
+  register("backup_size_bytes", "Backup size in bytes", "gauge");
+  register("backup_duration_ms", "Backup duration in ms", "histogram");
+  register("backup_integrity_status", "Backup integrity status (1=valid, 0=invalid)", "gauge");
+  register("restores_total", "Restores by status", "counter");
+  register("restore_duration_ms", "Restore duration in ms", "histogram");
 
   logger.info("[METRICS] All default metrics registered");
 }

@@ -9,6 +9,7 @@ import {
   LayoutDashboard, Shield, Bug, FileText, Wrench, Globe, Calendar,
   LogOut, ChevronRight, Search, Bell, Settings, Users,
   Menu, X, ChevronLeft, Sparkles, Zap, Sliders, BookOpen, Activity,
+  HardDrive, Trash2,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,12 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/scheduling", label: "Scheduling", icon: Calendar },
   { href: "/observability", label: "Observability", icon: Activity },
+  { href: "/observability/logs", label: "Logs", icon: FileText },
+  { href: "/observability/tracing", label: "Tracing", icon: Activity },
+  { href: "/observability/alerts", label: "Alerts", icon: Shield },
+  { href: "/observability/dashboards", label: "Dashboards", icon: LayoutDashboard },
+  { href: "/observability/backups", label: "Backups", icon: HardDrive },
+  { href: "/observability/retention", label: "Retention", icon: Trash2 },
 ];
 
 const SETTINGS_ITEMS: NavItem[] = [
